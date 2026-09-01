@@ -1,0 +1,8 @@
+knowledge-check: Sure — first, the two certificates.
+
+In your own words: in mTLS, what are the two certificates involved, which side presents each one, and what does each certificate prove?
+knowledge-check: You've got the reversal right in spirit, but the names are swapped.
+
+[module] The **server certificate** is what the server presents to prove its identity to the client, and the **client certificate** is what the client presents to prove its identity to the server. One-way TLS already has the server certificate; mTLS adds the client certificate direction on top of that.
+
+Re-ask, smaller: in the ALB handshake, which certificate does the client send, and what is it proving with that certificate?

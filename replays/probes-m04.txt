@@ -1,0 +1,14 @@
+# probe 4.1 — concept
+What does the TLS handshake accomplish, and why does the connection end up encrypted with a symmetric session key rather than the server's public key?
+
+# probe 4.2 — follow-up on 4.1
+Explain that more simply.
+
+# probe 4.3 — example
+Give me a concrete example: a browser opens https://api.example.com against a server that hosts many names. Walk through the handshake and say which part lets the server present the right certificate.
+
+# probe 4.4 — diagram
+In the diagram at the end of the module, walk through the handshake message by message and say what each side learns or proves at each step.
+
+# probe 4.5 — out-of-corpus
+How do I pin the server certificate in a mobile app so it only ever trusts one specific certificate?

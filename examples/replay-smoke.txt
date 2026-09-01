@@ -1,0 +1,6 @@
+# Pre-written messages for a replay run. Blank lines separate messages;
+# lines starting with # are ignored.
+
+What does a route table do when a packet arrives?
+
+Why does the most specific matching prefix win?

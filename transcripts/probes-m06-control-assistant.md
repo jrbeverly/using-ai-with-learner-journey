@@ -1,0 +1,312 @@
+# Learner conversation transcript
+## Run — 2026-09-28T18:49:11Z (replay)
+- Helper: control-assistant (helpers/control-assistant.md)
+- Module: modules/06-mutual-tls.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Base URL: https://api.deepseek.com/anthropic
+
+### Turn 1
+- Helper: control-assistant
+- Module: modules/06-mutual-tls.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:49:27Z
+
+Learner:
+
+The module says mutual TLS mirrors Module 4 in reverse. What exactly is reversed, and which Module 5 machinery does the server now use?
+
+Helper reply (verbatim):
+
+The reversal is about **who authenticates whom**, and which side holds the trust store.
+
+In one-way TLS from Module 4:
+
+- The **server** presents a certificate and proves possession of the private key.
+- The **client** validates the server’s certificate chain against the client’s trust store.
+
+In mutual TLS, that same pattern runs in the opposite direction **in addition to** the normal server authentication:
+
+- The **server** sends a `CertificateRequest` listing the CAs it accepts.
+- The **client** presents its own certificate.
+- The **client** sends `CertificateVerify`, a signature over the handshake transcript made with the client’s private key. This proves the client owns the key, not just a copy of the certificate.
+- The **server** validates the client’s certificate chain against the server’s trust store.
+
+So the reversal is specifically:
+
+| One-way TLS | mTLS addition |
+|---|---|
+| Server proves identity to client | Client proves identity to server |
+| Client holds the trust store | Server now also holds a trust store |
+| Client validates server chain | Server validates client chain |
+| No client certificate | Client sends `Certificate` + `CertificateVerify` |
+
+The **Module 5 machinery** the server now uses is the same certificate-validation machinery the client used for server certificates:
+
+- Building and validating a chain to a trusted CA
+- Checking signatures and validity dates
+- Checking issuer/subject relationships
+- Optionally checking revocation via CRLs or similar
+
+In ALB terms, the ALB’s trust store plays the same role for client certificates that the client’s trust store played for server certificates in one-way TLS.
+
+### Turn 2
+- Helper: control-assistant
+- Module: modules/06-mutual-tls.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:49:32Z
+
+Learner:
+
+Explain that more simply.
+
+Helper reply (verbatim):
+
+In normal TLS, only the **server** proves who it is. The client checks the server’s certificate against a list of trusted CAs.
+
+In mutual TLS, that same process happens **in reverse, too**:
+
+- The server now asks the client: “prove who you are.”
+- The client sends its own certificate.
+- The client also signs part of the handshake with its private key. That proves the client really owns the certificate.
+- The server checks the client’s certificate against the server’s trust store.
+
+So the trusted-CA checking that the client used to do for server certificates is now done **by the server for client certificates**.
+
+The “Module 5 machinery” is just the usual certificate checking:
+
+- Is the certificate signed by a trusted CA?
+- Is it still valid?
+- Does the chain lead to a trusted root?
+- Optionally, has it been revoked?
+
+The difference is only that the server is now using those checks on the client’s certificate instead of the other way around.
+
+### Turn 3
+- Helper: control-assistant
+- Module: modules/06-mutual-tls.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:49:51Z
+
+Learner:
+
+Give me a concrete example: an ALB in verify mode receives a request from a client with a certificate issued by the private CA. Walk through what the ALB checks and what the application behind it receives.
+
+Helper reply (verbatim):
+
+Here is a concrete example.
+
+**Setup**
+
+- Private CA: `CN=Acme Private Root CA`
+- Client certificate: `CN=client-42, O=Acme Engineering`
+- That client certificate is issued by `Acme Private Root CA`
+- The ALB trust store contains `Acme Private Root CA`
+- The listener is in **verify mode**
+
+---
+
+### What the ALB checks
+
+When the client connects:
+
+1. During the TLS handshake, the ALB sends `CertificateRequest` and says which CAs it accepts.
+
+2. The client sends its certificate plus a `CertificateVerify` signature proving it owns the private key.
+
+3. The ALB then checks the client certificate against its trust store:
+
+   - **Signed by trusted CA**  
+     The leaf certificate `CN=client-42` must chain up to `Acme Private Root CA`, which is in the ALB trust store.
+
+   - **Signature valid**  
+     The certificate was really signed by the private CA.
+
+   - **Not expired**  
+     For example, valid from `2024-01-01` to `2025-01-01`.
+
+   - **Optional revocation check**  
+     If a CRL is configured, the ALB checks that the client certificate serial number has not been revoked.
+
+4. If all checks pass, the TLS connection is established and the ALB forwards the request to the application.
+
+If any check fails, the connection is rejected at the ALB. The application never sees the request.
+
+---
+
+### What the application receives
+
+The ALB forwards the normal request and adds identity headers about the validated client certificate.
+
+For the example certificate, the application might receive:
+
+```http
+X-Amzn-Mtls-Clientcert-Serial-Number: 1234ABCD
+X-Amzn-Mtls-Clientcert-Issuer: CN=Acme Private Root CA
+X-Amzn-Mtls-Clientcert-Subject: CN=client-42,O=Acme Engineering
+X-Amzn-Mtls-Clientcert-Validity: NotBefore=2024-01-01T00:00:00Z, NotAfter=2025-01-01T00:00:00Z
+X-Amzn-Mtls-Clientcert-Leaf: -----BEGIN CERTIFICATE----- ...
+```
+
+So the application does not need to do its own chain validation. The ALB has already done that. The application can trust those headers and use the identity, for example to authorize `client-42`.
+
+---
+
+In short: **ALB verify mode validates the client certificate at the edge, rejects invalid clients, and passes the authenticated client identity to the application in headers.**
+
+### Turn 4
+- Helper: control-assistant
+- Module: modules/06-mutual-tls.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:50:06Z
+
+Learner:
+
+In the diagram at the end of the module, walk through the mutual TLS handshake and point out which messages a one-way TLS handshake does not have, and what the ALB validates before any application data flows.
+
+Helper reply (verbatim):
+
+Here is the walk-through, following the diagram.
+
+### 1. Client → ALB: `ClientHello`
+
+This is the same as one-way TLS. The client says it wants to connect and lists supported TLS versions, cipher suites, etc.
+
+### 2. ALB → Client: server messages
+
+The ALB sends:
+
+- `ServerHello`
+- The ALB’s own server certificate
+- **`CertificateRequest`** ← not present in ordinary one-way TLS
+- `Finished`
+
+The **`CertificateRequest`** is the key mTLS addition. It tells the client:
+
+> “I need you to authenticate with a certificate. Here are the CAs I accept.”
+
+In one-way TLS, the server normally never asks for a client certificate.
+
+### 3. Client → ALB: client messages
+
+The client sends:
+
+- **`Certificate`** ← not present in ordinary one-way TLS
+- **`CertificateVerify`** ← not present in ordinary one-way TLS
+
+The client’s `Certificate` message contains the client’s leaf certificate and intermediate certificates.
+
+The `CertificateVerify` message is a signature over the handshake transcript made with the client’s private key. It proves the client actually possesses the private key for the certificate it just sent.
+
+In one-way TLS these two client messages are absent because the client is not authenticating.
+
+### 4. What the ALB validates before application data
+
+Before any encrypted application data flows, the ALB validates the client certificate:
+
+- Does the client certificate chain to a CA in the ALB trust store?
+- Is the certificate signature valid?
+- Is the certificate inside its validity window?
+- Optionally, has the certificate been revoked, if CRLs are configured?
+- Does the `CertificateVerify` signature prove the client holds the private key?
+
+If any check fails, the ALB rejects the handshake. The application never sees the request.
+
+### 5. Encrypted application data
+
+Only after successful validation does the handshake complete and application data flow:
+
+```text
+client <==== encrypted application data ====> ALB
+```
+
+So the three messages a one-way TLS handshake does **not** have are:
+
+1. `CertificateRequest` from the server
+2. `Certificate` from the client
+3. `CertificateVerify` from the client
+
+And the ALB validates the client’s chain, key possession, validity, and optional revocation status before allowing application traffic through.
+
+### Turn 5
+- Helper: control-assistant
+- Module: modules/06-mutual-tls.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:50:21Z
+
+Learner:
+
+How does mutual TLS work in a Kubernetes service mesh like Istio?
+
+Helper reply (verbatim):
+
+In Istio, mutual TLS is implemented by **Envoy sidecar proxies**, not by the application code. The applications send plaintext to their local sidecar, and the sidecars handle mTLS between pods.
+
+### Key components
+
+- **Istiod** is the control plane and acts as the certificate authority for the mesh.
+- Each pod has an **Envoy sidecar** that terminates and originates mTLS connections.
+- Workload identity is based on the Kubernetes **service account** and expressed as a **SPIFFE ID**, for example:
+
+```text
+spiffe://cluster.local/ns/default/sa/frontend
+```
+
+This means the certificate is not just a raw key pair; it carries a workload identity.
+
+### How the mTLS connection works
+
+1. **Certificate issuance**
+
+   When a pod starts, its Envoy sidecar contacts Istiod and requests a certificate and private key. Istiod issues a certificate that includes the pod’s SPIFFE identity, tied to its service account.
+
+2. **Trust bundle distribution**
+
+   The sidecar also receives the mesh trust bundle — the root CA certificate or certificates it should trust when validating other workloads.
+
+3. **Service-to-service call**
+
+   Suppose service A calls service B:
+
+   - Envoy A opens a TLS connection to Envoy B.
+   - Envoy B presents its server certificate.
+   - Envoy B also sends a `CertificateRequest` asking Envoy A to prove its identity.
+   - Envoy A presents its client certificate and a `CertificateVerify` signature, proving it owns the private key.
+
+4. **Validation**
+
+   Each sidecar validates the peer’s certificate:
+
+   - Does it chain to a trusted root in the trust bundle?
+   - Is it still valid?
+   - Does the identity in the certificate match the expected workload?
+
+5. **Identity established**
+
+   After the handshake, each sidecar knows the other’s SPIFFE identity. The encrypted connection now has both encryption and authenticated identity.
+
+6. **Forwarding to the application**
+
+   Envoy terminates the mTLS connection and forwards plaintext traffic to the application container on localhost. The application does not need to be mTLS-aware.
+
+### What this enables
+
+Because Envoy knows the peer’s SPIFFE identity, Istio can enforce authorization policies like:
+
+> Allow requests from `spiffe://cluster.local/ns/default/sa/frontend` to `spiffe://cluster.local/ns/default/sa/backend` on port 8080.
+
+This is identity-based authorization, not just IP-based.
+
+### Permissive vs. strict mode
+
+Istio supports different peer authentication modes:
+
+- **Permissive**: a workload accepts both mTLS and plaintext traffic. This is useful during migration.
+- **Strict**: only mTLS is allowed.
+
+In a fully locked-down mesh, strict mTLS ensures that every service-to-service call is encrypted and mutually authenticated, even if the application itself does not implement TLS.

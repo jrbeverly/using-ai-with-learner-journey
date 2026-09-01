@@ -1,0 +1,14 @@
+# probe 2.1 — concept (connects to Module 1)
+The module says the VPC is defined by a CIDR range from the private space of Module 1. Which Module 1 concept is that, and what carries over from that module into the VPC?
+
+# probe 2.2 — follow-up on 2.1
+Explain that more simply.
+
+# probe 2.3 — example
+Give me a concrete example: one instance in the private subnet needs to download a package from the internet, and another needs to call the Secrets Manager API. Walk through both traffic paths step by step.
+
+# probe 2.4 — diagram
+In the diagram at the end of the module, trace both paths it shows: instance B reaching the AWS service API, and outbound traffic from the private subnet leaving through the NAT gateway. What does each component do along the way?
+
+# probe 2.5 — out-of-corpus
+How do I connect two VPCs together with VPC peering?

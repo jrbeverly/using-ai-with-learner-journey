@@ -1,0 +1,22 @@
+knowledge-check: Sure — let’s start with the first one.
+
+In your own words, what does an X.509 certificate bind together, and what role does the matching private key play?
+knowledge-check: That matches the module: the certificate binds a public key to an identity — subject name plus SANs, validity period, and issuer — and the matching private key is what lets the holder prove ownership of that identity `[module]`.
+
+Next: how does a chain of CAs let a client trust a stranger’s certificate? In your own words, walk through the chain from leaf to trust anchor.
+knowledge-check: Yes — that’s the chain: leaf signed by intermediate, intermediate signed by root, and the root is a trust anchor the client already holds in its trust store. The key point the module makes is that trust is local: the chain only matters if it ends at an anchor the client is configured to trust `[module]`.
+
+Next: what does the client actually check during validation? Try to list the checks beyond just building the chain.
+knowledge-check: Mostly right — chain, SAN, and validity dates are exactly what the module lists.
+
+One correction: revocation is not about whether the CA is still trusted. It checks whether a certificate has been revoked before its expiry date — for example, because its private key was compromised `[module]`.
+
+Smaller re-check: in one sentence, what does a CRL contain?
+knowledge-check: Right — that clears it up: CRLs are CA-published lists of revoked certificate serials, and OCSP queries the status of one certificate `[module]`.
+
+Last one: describe the division of labor between AWS Certificate Manager and AWS Private CA. What is each service for, and what sets them apart?
+knowledge-check: That’s the division of labor: ACM provisions and renews public certificates for integrated AWS services like load balancers, with automatic renewal at no certificate cost; AWS Private CA runs your own private CAs for internal identities, with a monthly cost that varies by mode `[module]`.
+
+Wrap-up: Solid on what a certificate binds, how the chain and trust anchor work, the validation checks, and the ACM/Private CA split. The only wobble was revocation — you corrected it cleanly — so I would not record anything new as unclear from this module. No score; this was just a targeted conversation.
+knowledge-check: Stopping here. What seemed solid: what a certificate binds, the chain/trust-anchor model, validation checks, and the ACM vs. AWS Private CA split. Nothing new to record as unclear from this module. No score — this was just a conversational check.
+transcript: runs/walkthrough-walkthrough-05-check.part.md

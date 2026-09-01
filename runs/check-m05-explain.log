@@ -1,0 +1,17 @@
+knowledge-check: Go ahead — walk me through how a client decides whether to trust a server certificate, in your own words.
+knowledge-check: Your validation list is solid: build the chain to a trust anchor, then check SAN match, validity dates, and revocation `[module]`.
+
+One piece is reversed, though: the leaf does not sign the intermediate, and the intermediate does not sign the root. The intermediate CA's private key
+knowledge-check: That's the right direction. The client starts at the leaf, verifies the leaf's signature using the intermediate's public key, then verifies the intermediate's signature using the root's public key. Signing authority flows downward — root signs intermediate, intermediate signs leaf — so verification walks upward `[module]` `[derived]`.
+
+One follow-up: when the client reaches the root, what stops an attacker from just presenting their own self-signed root and claiming it's the anchor?
+knowledge-check: A certificate binds a public key to an identity: a subject name plus the SANs (the hostnames it's valid for), a validity period, and the issuer that vouches for it. Whoever holds the matching private key can prove ownership of that identity `[module]`.
+
+Now, back to the chain: when the client reaches the root, what stops an attacker from just presenting their own self-signed root and claiming it's the anchor?
+knowledge-check: Solid: you correctly listed the validation checks — chain to a trust anchor, SAN match, validity dates, and revocation.
+
+Record in your learner state:
+- Why an attacker's own self-signed root is not accepted — the root must already be in the client's trust store as a trust anchor; we didn't finish this part.
+
+This is not a score — just a note on what to revisit.
+transcript: transcripts/check-m05-explain.md

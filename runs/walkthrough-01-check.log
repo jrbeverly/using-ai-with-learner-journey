@@ -1,0 +1,14 @@
+knowledge-check: Let’s start with the one you flagged.
+
+When a private host, say `10.0.1.5`, sends a packet to a public server, the NAT device rewrites the source address to its own public address. The reply comes back to that public address. How does the NAT device know which private host should receive the reply? Walk me through what it has to remember and how it uses that on the return packet.
+knowledge-check: That’s the core mechanism. The module says NAT translates the private source address to a public one and translates replies back `[module]`. Your point that the NAT device keeps a per-connection mapping is the usual way it knows which private host to send the reply to `[derived]`. One refinement: the mapping is typically keyed by the four-tuple, so several simultaneous connections from the same private host to the same server stay distinct `[derived]`.
+
+Now the route table and default route. In your own words, what does a route table do when a packet arrives, and what role does `0.0.0.0/0` play?
+knowledge-check: That’s right: the route table maps prefixes to next hops, and the most specific match wins. `0.0.0.0/0` is the default route — it matches anything, so it’s used only when no more specific prefix fits `[module]`.
+
+Now the last one you asked about: why do private address ranges exist? In your own words, what problem do they solve, and what trade-off comes with using them?
+knowledge-check: That matches the module: RFC 1918 reserves those three ranges; packets to them are never routed across the public internet, so organizations can reuse the same addresses, and the trade-off is that a private host needs NAT to reach the internet `[module]`.
+
+That covers the three topics you asked about. What looked solid: NAT reply translation, route table and default-route logic, and why private ranges exist. Nothing from this check remained unclear, so there’s nothing new to record — and NAT reply translation no longer looked unclear. This is not a score.
+knowledge-check: Solid: NAT reply translation, route tables and the default route, and the purpose of private address ranges. Nothing to record as unclear. This is not a score.
+transcript: runs/walkthrough-walkthrough-01-check.part.md

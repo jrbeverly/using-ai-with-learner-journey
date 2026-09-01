@@ -1,0 +1,10 @@
+# Module 7 tutor segment with the specialized architecture helper.
+# Four turns.
+
+I've just read the module. It opens with three positions — client authentication at the edge, certificates as the only credentials, and layered network privacy. Walk me through each position and where in "The pieces" it is realized.
+
+In the diagram, trace a request from the engineer's laptop all the way to a service instance and back. Name every element it passes through, and say where each trust boundary sits.
+
+Suppose a client certificate is on the CRL in the ALB trust store. Using the "Walking a request" section, walk the request to the trust boundary that stops it, and say what happens there.
+
+The "Certificate lifecycle" section re-issues short-lived client certificates with every deployment. Why not rely on the ALB's ACM server certificate lifecycle — automatic renewal — for the client side too?

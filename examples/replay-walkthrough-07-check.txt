@@ -1,0 +1,12 @@
+# Module 7 knowledge check. Topics steered per the summary; clean
+# answers. Five turns.
+
+Let's check my understanding of this module. Ask me first to trace a request through the architecture from the caller's certificate to a service instance, then the trust boundaries, then the certificate lifecycle.
+
+An engineer's laptop connects over Client VPN with its client certificate, DNS resolves api.internal.example.com to the ALB, the ALB presents its ACM server certificate and requests a client certificate, validates the client chain against the trust store and checks the CRL, and forwards the request to a target instance with X-Amzn-Mtls headers carrying the validated identity; the application authorizes from the header identity and responds.
+
+The trust boundaries are the VPN edge, the ALB listener, and the security groups around the instances. The VPN edge authenticates the tunnel, the ALB listener validates the client certificate chain, and the security groups admit traffic only from the ALB.
+
+The ALB's ACM server certificate renews automatically, but private CA client certificates do not renew themselves, so the design uses short-lived certificates re-issued with every deployment; the CRL in the trust store is the backstop for keys known to be compromised.
+
+I'd like to stop here.

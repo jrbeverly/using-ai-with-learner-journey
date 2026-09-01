@@ -1,0 +1,27 @@
+knowledge-check: Sounds good — we’ll go in that order.
+
+First: in your own words, what does mTLS add to one-way TLS, and what changes for the client and the server?
+knowledge-check: Right — mTLS adds client authentication at the transport layer: the client now holds its own certificate and private key, and the server holds a trust store of the CAs it accepts, so identity is carried by the connection before application logic runs. `[module]`
+
+Next: compared with one-way TLS, which extra messages appear in the mTLS handshake, and what does each one do?
+knowledge-check: You’ve got the main ones. `CertificateRequest` tells the client which CAs the server accepts, and `CertificateVerify` proves the client holds the private key by signing the handshake transcript. `[module]` One thing to make explicit: the client’s `Certificate` message is also extra here — in one-way TLS only the server sends one. `[derived]` You mentioned it, so the picture is complete.
+
+Now the server-side trust store: in your own words, what is it for, and what exactly does the server do against it during mTLS?
+knowledge-check: Right — the server-side trust store is the bundle of CA roots and intermediates for the CAs the server accepts, and validation means checking the client’s chain against it, with optional revocation checks. `[module]` That means the trust store is what decides which client identities are acceptable before application traffic flows.
+
+Last one: how do ALB mTLS’s verify and passthrough modes differ, and which should you normally choose?
+knowledge-check: You’ve swapped the two names.
+
+- **Verify mode** is where the ALB validates the client certificate chain against the trust store — optionally against CRLs — rejects invalid certificates at the edge, and forwards the validated identity in the X-Amzn-Mtls headers. `[module]`
+- **Passthrough mode** is where the ALB performs no validation and forwards the entire chain in a single `X-Amzn-Mtls-Clientcert` header for the application to validate. `[module]`
+
+So the question again, smaller: in which mode is an invalid client certificate rejected at the ALB before it reaches the application?
+knowledge-check: Right — you’ve got the modes straight now. Verify mode validates the client chain against the trust store, optionally against CRLs, rejects invalid certificates at the edge, and forwards the validated identity in the X-Amzn-Mtls headers. Passthrough mode does no validation and forwards the entire chain in a single `X-Amzn-Mtls-Clientcert` header. `[module]`
+
+So the answer to my smaller question is verify mode.
+
+One follow-up from the original question: which mode should you normally choose, and why?
+knowledge-check: Solid: you can explain what mTLS adds, the extra handshake messages, and the server-side trust store. On verify vs. passthrough you initially swapped the names but then corrected them cleanly, so that now looks clear too.
+
+Nothing new to record as unclear from this check. This is a check, not a score.
+transcript: runs/walkthrough-walkthrough-06-check.part.md

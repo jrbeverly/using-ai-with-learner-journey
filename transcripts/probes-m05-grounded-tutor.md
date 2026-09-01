@@ -1,0 +1,99 @@
+# Learner conversation transcript
+## Run — 2026-09-28T18:48:01Z (replay)
+- Helper: grounded-tutor (helpers/grounded-tutor.md)
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Base URL: https://api.deepseek.com/anthropic
+
+### Turn 1
+- Helper: grounded-tutor
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:48:14Z
+
+Learner:
+
+The module says validation means building a chain from the presented certificate to an anchor in the trust store. Connect this to Module 4: at which point in the handshake does this happen, and what does it give the client that the rest of the handshake does not?
+
+Helper reply (verbatim):
+
+In the TLS handshake from Module 4, the server presents its certificate shortly after the `ServerHello`, and the client runs validation before using the certificate’s public key for key exchange or signature verification [general]. This is the moment where the module’s validation steps apply: build a chain to a trust anchor, check a SAN matches the hostname, check the validity dates, and check revocation [module].
+
+What this gives the client is a trusted binding between the public key and the named server. The rest of the handshake only proves that the peer controls the private key corresponding to whatever public key was presented [general]. That alone does not tell the client *who* the peer is; anyone can generate a key pair. Validation adds the local trust decision the module describes: a CA the client already trusts has vouched for this key as belonging to `api.example.com`, and that vouching is still valid [module][derived].
+
+### Turn 2
+- Helper: grounded-tutor
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:48:22Z
+
+Learner:
+
+Explain that more simply.
+
+Helper reply (verbatim):
+
+During the TLS handshake, the server sends its certificate before the client relies on the public key [general]. At that moment the client does this module’s checks: build the chain to a trusted root, confirm a SAN matches the hostname, check the dates, and check revocation [module].
+
+The rest of the handshake only proves the server holds the matching private key [general]. That is like proving you know a password without proving your name. Validation adds the missing part: a CA the client already trusts says this key belongs to the requested server name [module][derived]. That identity binding is what the handshake alone cannot provide.
+
+### Turn 3
+- Helper: grounded-tutor
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:48:55Z
+
+Learner:
+
+Give me a concrete example: a client connects to api.example.com and is presented a leaf certificate and an intermediate. Walk through every check the client performs before accepting the connection.
+
+Helper reply (verbatim):
+
+Suppose the client already has the root CA certificate in its trust store [module]. During the handshake, `api.example.com` presents the leaf certificate and the intermediate certificate; the root is normally already installed locally, not presented [general][derived]. The client performs these checks:
+
+1. **Build the chain.** It verifies the leaf certificate’s signature with the intermediate’s public key, verifies the intermediate’s signature with the root’s public key, and confirms the root is a trust anchor in its local trust store [module][derived]. If the chain does not reach a trusted root, validation fails [derived].
+2. **Check the hostname.** It checks that a SAN in the leaf certificate matches `api.example.com` [module].
+3. **Check validity.** It checks that the current time falls inside the leaf certificate’s validity period [module].
+4. **Check revocation.** It checks the leaf certificate’s revocation status, for example via CRL or OCSP, if its TLS stack is configured to do so; the module notes not every TLS endpoint checks both mechanisms [module].
+
+Only after these checks pass does the client accept the certificate and use its public key to continue the handshake [general]. The rest of the handshake proves the server holds the matching private key, but these validation steps are what tie that key to the name `api.example.com` [module][derived].
+
+### Turn 4
+- Helper: grounded-tutor
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:49:01Z
+
+Learner:
+
+In the diagram at the end of the module, walk from the trust anchor down to the leaf certificate: who signs what, and what does the client have to check to trust the leaf?
+
+Helper reply (verbatim):
+
+Walking the diagram from top to bottom [module]:
+
+- **Trust store → root CA certificate (self-signed).** The client’s trust store contains the root certificate, and that root is the trust anchor [module]. The root is self-signed, meaning it is signed by its own private key; the client does not verify it by another authority, but trusts it because it was configured locally [module][derived].
+- **Root’s private key → intermediate certificate.** The root CA’s private key signs the intermediate certificate, so the client can verify the intermediate by checking its signature against the root’s public key [module][derived].
+- **Intermediate’s private key → leaf certificate.** The intermediate CA’s private key signs the leaf certificate, so the client can verify the leaf by checking its signature against the intermediate’s public key [module][derived].
+
+To trust the leaf, the client has to verify those signatures and thereby build a chain from the leaf up to the anchor already in its trust store, confirm a SAN matches `api.example.com`, check the validity dates, and check revocation [module]. The final “paired with the leaf private key” line means the server must later prove it holds that matching private key, which the handshake does separately [module][general].
+
+### Turn 5
+- Helper: grounded-tutor
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:49:11Z
+
+Learner:
+
+How would I run my own CA on-premises with OpenSSL instead of using AWS Private CA?
+
+Helper reply (verbatim):
+
+That’s outside this module, which covers AWS Private CA rather than an on-premises OpenSSL setup [module]. From general knowledge, you would generate a root private key and a self-signed root certificate, then create an intermediate CA key and certificate signed by the root [general]. You would issue leaf certificates by generating key pairs and certificate signing requests, sign them with the intermediate key, and include the required SANs and validity period [general]. Clients must trust the chain by having your root certificate installed in their trust store, and you can handle revocation by publishing CRLs or running an OCSP responder [general]. In practice, you would also protect the root key carefully and often keep it offline, using the intermediate for daily issuance [general].

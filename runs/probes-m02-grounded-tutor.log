@@ -1,0 +1,39 @@
+grounded-tutor: That is Module 1’s **private address space / CIDR** concept [module]. A VPC carries it forward by being defined as a CIDR range from that private space—for example `10.1.0.0/16`—and by giving everything launched into the VPC a private IP from that range [module]. The VPC then subdivides that private block into smaller subnet CIDRs such as `10.1.1.0/24` [module]. In effect, the VPC applies Module 1’s private CIDR ideas as an isolated, region-scoped AWS network [derived].
+grounded-tutor: Module 1’s concept is the **private address space written as a CIDR block** [module]. The module uses examples like `10.1.0.0/16` for the VPC and `10.1.1.0/24` for a subnet [module].
+
+The carryover is simple: the VPC takes one of those private CIDR blocks and uses it as the network’s IP range [module]. Every resource launched into the VPC gets a private IP from that range, and the VPC then splits the range into smaller subnet blocks [module][derived]. So Module 1 gives the private IP ranges, and Module 2 turns one of them into an isolated VPC address space [derived].
+grounded-tutor: Concrete setup: VPC `10.1.0.0/16`, public subnet `10.1.1.0/24`, private subnet `10.1.2.0/24` [module]. A NAT gateway sits in the public subnet and holds an elastic IP address [module]. A VPC interface endpoint for Secrets Manager places an ENI with private IPs into the private subnet [module].
+
+### Path 1: Private instance downloads a package from the internet
+
+1. The instance in the private subnet sends an outbound packet to the package repository. A private subnet has no route to the internet at all, so the instance cannot reach it directly [module].
+2. The packet is routed to the NAT gateway in the public subnet [derived]. The NAT gateway translates the packet’s private source address to its own elastic IP address and records the mapping [module].
+3. Because the NAT gateway is in a public subnet, its outbound traffic can leave through the internet gateway [module][derived]. The package repository sees the request coming from the NAT gateway’s elastic IP, not from the private instance [module].
+4. The reply comes back to the NAT gateway’s elastic IP. The NAT gateway translates the reply back to the private instance’s address [module].
+5. The internet cannot start a connection to the instance on its own, because the NAT translation mapping only exists for flows the private instance initiated [module]. Each resource’s security group must also allow the traffic, and the reply is allowed automatically because security groups are stateful [module].
+
+### Path 2: Private instance calls the Secrets Manager API
+
+1. The instance sends an API call to Secrets Manager. The module’s guidance is to use a VPC endpoint for this instead of a NAT gateway wherever an endpoint exists [module].
+2. The call is sent to the interface endpoint’s ENI, which has private IPs inside the private subnet [module].
+3. The traffic then travels via AWS PrivateLink to the Secrets Manager API [module].
+4. That traffic never leaves the AWS network and never uses a public IP [module]. So there is no NAT gateway translation, no elastic IP exposure, and no internet path involved in this flow [derived].
+grounded-tutor: ### Path 1: Instance B → AWS service API (shown explicitly)
+
+1. **Instance B** is in the private subnet `10.1.2.0/24`, so it has no route to the internet at all [module]. To reach a service like Secrets Manager, it sends the API call to the VPC endpoint in its subnet [module].
+2. The **VPC endpoint** places an **elastic network interface (ENI)** with private IPs into the subnet [module]. Instance B reaches that ENI using private VPC addressing [derived].
+3. **AWS PrivateLink** then carries the call from the interface endpoint to the AWS service API [module]. The traffic never leaves the AWS network and never uses a public IP [module]. The internet gateway is not part of this path [derived].
+
+### Path 2: Private-subnet outbound traffic via NAT gateway (represented by the NAT’s outbound arrow)
+
+The diagram’s outbound arrow shows the internet-bound leg from the NAT gateway; the hop from a private instance to the NAT gateway is implied by the module’s description [module][derived].
+
+1. A private instance sends an outbound request. Since the private subnet cannot reach the internet directly [module], its traffic is routed to the **NAT gateway** in the public subnet [derived].
+2. The **NAT gateway**, which lives in the public subnet and holds an **elastic IP address**, translates the private source address to its own elastic IP and records the mapping [module].
+3. Because the public subnet has a route to an **internet gateway** [module], the translated packet can then leave through the IGW to the internet [derived].
+4. The reply comes back to the NAT gateway’s elastic IP, and the NAT gateway translates it back to the private instance [module].
+5. The internet cannot initiate an inbound connection to the private instance because the NAT translation exists only for flows the private instance started [module].
+grounded-tutor: VPC peering is not covered in this module—the metadata lists only VPC, subnets, internet/NAT gateways, security groups, and VPC endpoints as the concepts introduced here [module]. Connecting two VPCs together belongs to a later part of the journey, so I’ll stay with the current module [derived].
+
+Within this module, the connectivity mechanisms are about reaching the internet from a private subnet via a NAT gateway, and reaching AWS service APIs from a private subnet via VPC endpoints and AWS PrivateLink [module]. VPC-to-VPC connection is a separate topic, not part of those paths [derived].
+transcript: transcripts/probes-m02-grounded-tutor.md

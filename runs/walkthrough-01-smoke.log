@@ -1,0 +1,19 @@
+smoke-tutor: Because `10.0.2.9` matches both prefixes, and routing uses the **most specific match** — the entry with the longest prefix wins [module]. The prefix `10.0.2.0/24` fixes the first 24 bits, so it matches only addresses in that exact subnet, while `0.0.0.0/0` matches every address [module]. Since `/24` is more specific than `/0`, router A sends the packet to `10.0.9.2`, not the default route.
+
+The default route is only used when no more specific prefix matches [module]. So a packet for, say, `8.8.8.8` would not match `10.0.1.0/24` or `10.0.2.0/24`, and would therefore go to the default gateway `10.0.9.1`.
+smoke-tutor: A router treats the default route `0.0.0.0/0` as a catch-all: it matches any destination, but only as a last resort [module]. The route `10.0.2.0/24` is much narrower — it only matches addresses beginning with `10.0.2.` [module]. Since `10.0.2.9` fits that narrower rule, the router uses it instead of the catch-all.
+
+So the rule is: when several routes match, the more specific one wins [module]. The default route is used only when nothing more specific matches.
+smoke-tutor: Starting at host A (`10.0.1.5`): it sees the destination `10.0.2.9` is outside its own subnet (`10.0.1.0/24`), so it sends the packet to its default gateway, router A [module].
+
+Router A then checks its route table [module]:
+
+- `10.0.1.0/24 -> local` — no match, because the destination is not in `10.0.1.x`.
+- `10.0.2.0/24 -> 10.0.9.2` — match: `10.0.2.9` is in that range.
+- `0.0.0.0/0 -> 10.0.9.1` — also matches, but it is less specific.
+
+So router A forwards the packet to the next hop `10.0.9.2`, which is router B [module]. The default route is ignored because the more specific `/24` route wins [module].
+
+The diagram does not show router B’s route table, but applying the module’s rule: router B would treat `10.0.2.0/24` as a directly attached network (`local`) because host B is on that subnet, so it delivers the packet directly to `10.0.2.9` [module, inferred from the diagram]. The packet’s destination address has not changed; it still says `10.0.2.9`.
+smoke-tutor: The module says a NAT device must translate the private source address to a public one and translate the replies back [module]. It doesn’t spell out the internal bookkeeping, but to reverse the translation it must remember which private address (and usually which source port) corresponds to which public address and port [general]. So when a reply arrives at the public address/port, the NAT device uses that saved mapping to send it back to the correct private host.
+transcript: runs/walkthrough-walkthrough-01-smoke.part.md

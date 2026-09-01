@@ -1,0 +1,7 @@
+m01	modules/01-networking-foundations.md
+m02	modules/02-private-connectivity-vpc.md
+m03	modules/03-vpns-and-routing.md
+m04	modules/04-tls-foundations.md
+m05	modules/05-certificates-and-trust.md
+m06	modules/06-mutual-tls.md
+m07	modules/07-combined-architecture.md

@@ -1,0 +1,88 @@
+# Learner conversation transcript
+## Run — 2026-09-28T18:38:49Z (replay)
+- Helper: grounded-tutor (helpers/grounded-tutor.md)
+- Module: modules/01-networking-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Base URL: https://api.deepseek.com/anthropic
+
+### Turn 1
+- Helper: grounded-tutor
+- Module: modules/01-networking-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:38:55Z
+
+Learner:
+
+What is network address translation (NAT), and why do hosts on private ranges need it to reach the internet?
+
+Helper reply (verbatim):
+
+Network address translation (NAT) is the function performed by a device that translates a host's private source address to a public one for outbound traffic, and translates the replies back to the private address. [module] The module describes this as the mechanism that lets a host on a private range reach the internet. [module]
+
+Hosts on private ranges need NAT because packets with private destinations are never routed across the public internet. [module] The module explains that this is the trade-off of RFC 1918 ranges: many organizations can reuse the same private addresses without conflict, but a host on one of those ranges cannot talk to the internet directly. [module] The NAT device therefore provides the public address that can actually be routed. [derived]
+
+### Turn 2
+- Helper: grounded-tutor
+- Module: modules/01-networking-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:39:01Z
+
+Learner:
+
+Explain that more simply.
+
+Helper reply (verbatim):
+
+A private IP address works only inside your own network; the public internet will not deliver packets to it. [module] That is the rule for the RFC 1918 ranges: they are reserved for private reuse and are never routed across the public internet. [module] NAT is the translator that gets around that limit. When a private host sends a packet out, the NAT device swaps the private source address for a public one, and when the reply comes back it swaps that public destination back to the private address. [module] So the internet only ever sees a routable public address, and the private host can still use its private address internally. [derived]
+
+### Turn 3
+- Helper: grounded-tutor
+- Module: modules/01-networking-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:39:25Z
+
+Learner:
+
+Give me a concrete example: a host at 10.0.1.5 opens two connections at the same time to the same service at api.example.com on port 443. Walk through what happens from the DNS lookup onward, and what keeps the two connections apart.
+
+Helper reply (verbatim):
+
+Suppose DNS returns `203.0.113.10` for `api.example.com` (this specific address is only an example, chosen because it is public). [general] Before connecting, the host resolves the name and then sends packets to the returned IP address. [module] Because `10.0.1.5` is in `10.0.1.0/24` and `203.0.113.10` is outside that subnet, the host sends the traffic to its default gateway. [module][derived] At the NAT device, the private source address `10.0.1.5` is translated to a public source address, and replies are translated back to the private address. [module]
+
+What keeps the two connections apart is the connection four-tuple: source address, source port, destination address, destination port. [module] Both connections share the same source address, destination address, and destination port `443`, but the host uses a different source port for each — such as `10.0.1.5:51000` and `10.0.1.5:51001` (the port numbers are illustrative). [general] After NAT, both connections share the same public source address, but the different source ports remain, so the two tuples are still distinct. [derived] That distinct source port is what lets one host hold many simultaneous connections to the same server. [module]
+
+### Turn 4
+- Helper: grounded-tutor
+- Module: modules/01-networking-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:39:37Z
+
+Learner:
+
+In the diagram at the end of the module, host A sends a packet to host B at 10.0.2.9. Trace the packet step by step, including every route-table lookup and decision along the way.
+
+Helper reply (verbatim):
+
+Host A first applies the same logic in miniature: the destination `10.0.2.9` is not in its own subnet `10.0.1.0/24`, so it sends the packet to its default gateway — which here is router A’s interface on that subnet. [module][derived] The packet carries source `10.0.1.5`, destination `10.0.2.9`, and the payload. [module]
+
+Router A then looks up `10.0.2.9` in its route table. The most specific matching prefix wins, so it matches `10.0.2.0/24 -> 10.0.9.2` (router B), not the default route `0.0.0.0/0`. [module] Router A forwards the packet toward router B. At router B, `10.0.2.9` is in its directly attached `10.0.2.0/24` network, so router B delivers it locally to host B. [derived] Router A’s default route is present but is never used for this packet because the more specific `10.0.2.0/24` route matches first. [module][derived]
+
+### Turn 5
+- Helper: grounded-tutor
+- Module: modules/01-networking-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:39:59Z
+
+Learner:
+
+How would all of this change if my network used IPv6 instead of RFC 1918 private ranges?
+
+Helper reply (verbatim):
+
+IPv6 is outside this module, so the following is general knowledge rather than course material. [general] The packet and routing ideas from the module would still apply in principle: packets carry source and destination addresses, routers decide the next hop from the destination address, and longest-prefix matching still chooses the route, including a default route. [derived] The main change is around NAT and private ranges. Typical IPv6 deployments give hosts globally routable addresses, so a host can send directly to a public destination and receive replies directly, without translating a private source address to a public one. [general] IPv6 does have a private-like range called Unique Local Addresses, `fc00::/7`, but those addresses are not routed on the public internet and are not the standard way to provide general internet access. [general]

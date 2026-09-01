@@ -1,0 +1,3 @@
+knowledge-check: Let’s start with the request trace.
+
+Trace a request from an engineer’s laptop through to a service instance, starting from the caller’s certificate. Include where mTLS is terminated and what form of identity actually reaches the instance.

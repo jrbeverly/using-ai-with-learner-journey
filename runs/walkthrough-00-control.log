@@ -1,0 +1,21 @@
+control-assistant: Here’s the big picture before you start the course.
+
+## How a private network inside AWS works
+
+In AWS, a private network is built with a **VPC** (Virtual Private Cloud). You choose a private IP range, typically from RFC 1918, such as `10.0.0.0/16`, and divide it into subnets across Availability Zones.
+
+Key ideas:
+
+- Every resource launched in a subnet gets a **private IP address** from that subnet’s range.
+- **Route tables** control where traffic can go. A subnet with no route to an internet gateway is private.
+- **NAT devices** allow private resources to make outbound internet requests without being reachable from the internet.
+- **Security groups** and **network ACLs** filter traffic at the resource and subnet level.
+- **VPC endpoints** let private resources reach AWS services like S3 or Dynam
+control-assistant: The single most important concept to nail down first is:
+
+**A private network is private because of addressing and routing, not because of encryption.**
+
+Specifically: private IP addresses from RFC 1918 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) are not routable across the public internet. In AWS, a VPC uses those ranges, and route tables determine whether traffic can leave the private network. That addressing/routing boundary is what creates isolation.
+
+Mutual TLS then adds a different layer: it authenticates and encrypts connections between specific services, even if the network path is shared. So the foundation is private IP addressing and routing; mTLS is the security layer on top.
+transcript: runs/walkthrough-walkthrough-00-control.part.md

@@ -1,0 +1,30 @@
+knowledge-check: Sounds good. First question: in your own words, what does mTLS add to one-way TLS, and which two certificates are involved?
+knowledge-check: There's a naming mix-up, but it's an easy one to fix: the certificate is named for who *holds* it, not who receives it. In mTLS, the server still presents its **server certificate** to the client, and the client presents its **client certificate** to the server. mTLS adds that client side — the server requires proof of the client's identity.[module]
+
+Smaller re-check: which of those two certificates is the new one mTLS adds, and who presents it?
+knowledge-check: Still swapped, so let's put the two sides side by side:
+
+- **Server certificate** — held and presented by the **server** to the client. That part already exists in one-way TLS.
+- **Client certificate** — held and presented by the **client** to the server. This is the part mTLS adds.[module]
+
+Then in the handshake, the **server** sends **CertificateRequest** asking for a client certificate. The **client** responds with its **Certificate** and **CertificateVerify** — the client's signature proving the client holds the matching private key.[module]
+
+That's the same reversal twice, so I'd record this one as unclear. Example for your learner state:
+
+- Which party presents the client certificate and which party sends CertificateRequest/CertificateVerify — I kept reversing client and server roles.
+
+Next concept: what is the server-side trust store for in mTLS?
+knowledge-check: Partly right: the server does present its own certificate (and chain) to the client — that's the one-way TLS part. But the **server-side trust store** is not for that. In mTLS, it holds the **CA certificates (roots and intermediates) the server trusts**, and the server uses it to validate the **client certificate chain** the client presents. It's the reverse of the client's trust store in one-way TLS.[module]
+
+Smaller re-check: in mTLS, whose certificate chain does the server validate against that trust store — its own or the client's?
+knowledge-check: Your description of the two modes is right: verify mode validates the client chain at the edge and forwards identity in X-Amzn-Mtls headers, while passthrough forwards the whole chain in a single X-Amzn-Mtls-Clientcert header and leaves validation to the application.[module]
+
+Back to the trust store — you didn't answer the re-check: whose certificate chain does the server validate against its trust store, its own or the client's?
+knowledge-check: What seemed solid: your description of verify vs. passthrough modes.
+
+Record in your learner state:
+- Which party presents the client certificate and which party sends CertificateRequest/CertificateVerify — I kept reversing client and server roles.
+- What the server-side trust store is for — I initially said it holds the server's own certificates; it actually holds the CAs used to validate the client chain.
+
+This is not a score — just notes for your own review.
+transcript: transcripts/check-m06-planted.md

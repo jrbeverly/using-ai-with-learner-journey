@@ -1,0 +1,6 @@
+smoke-tutor: Because `10.0.2.9` matches both entries, but routing uses the **most specific matching prefix**. The prefix `10.0.2.0/24` is more specific than `0.0.0.0/0` because it fixes 24 bits rather than 0 bits, so it wins. [module]
+
+The default route `0.0.0.0/0` only handles traffic when no more specific prefix matches. Since `10.0.2.9` falls inside `10.0.2.0/24`, router A forwards it to the next hop `10.0.9.2`, not to `10.0.9.1`. [module]
+smoke-tutor: Think of routing like instructions: a general instruction says “send everything to 10.0.9.1,” but a more detailed instruction says “send anything starting with 10.0.2 to 10.0.9.2.” When both could apply, the router uses the more detailed one. [module]
+
+Since `10.0.2.9` is in the `10.0.2.0/24` range, the detailed route wins over the catch-all default route `0.0.0.0/0`. The default route is only used when nothing more specific matches. [module]

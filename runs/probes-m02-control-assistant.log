@@ -1,0 +1,157 @@
+control-assistant: That is the **RFC 1918 private IPv4 address space**, expressed as a CIDR block.
+
+What carries over from Module 1 into the VPC:
+
+- **CIDR notation** for defining the VPC and its subnets
+- **Subnetting** that private range into smaller blocks
+- **Private address semantics**: addresses like `10.x.x.x` are not publicly routable, so a VPC is isolated from the internet by default
+- **Routing concepts**: route tables determine whether a subnet can reach the internet or must stay private
+
+So the VPC takes Module 1’s private addressing and routing ideas and applies them to an isolated AWS network.
+control-assistant: Module 1’s idea is **private IP addresses** — ranges like `10.x.x.x` that are reserved for internal networks and can’t be reached directly from the internet.
+
+What carries over into a VPC:
+
+- The VPC is built from one of those private ranges.
+- You split that range into smaller chunks called **subnets**.
+- Because the addresses are private, the VPC is isolated from the internet by default.
+- **Route tables** decide which parts of the VPC can reach the internet.
+
+So a VPC is basically a private network using those same Module 1 ideas.
+control-assistant: ## Example setup
+
+- VPC: `10.1.0.0/16`
+- Public subnet: `10.1.1.0/24` — contains a NAT gateway with elastic IP `203.0.113.10`
+- Private subnet: `10.1.2.0/24`
+- Instance A: `10.1.2.50` — needs to download a package from the internet
+- Instance B: `10.1.2.51` — needs to call the Secrets Manager API
+- VPC interface endpoint for Secrets Manager in the private subnet, with an ENI at `10.1.2.99`
+
+## Path 1: Instance A downloads a package from the internet
+
+1. Instance A sends a request to a package repository at public IP, for example `198.51.100.25`.
+
+   Source: `10.1.2.50`  
+   Destination: `198.51.100.25`
+
+2. The private subnet’s route table has a route that sends non-local internet traffic to the NAT gateway:
+
+   `0.0.0.0/0 -> NAT gateway`
+
+3. The NAT gateway receives the packet. It records a stateful mapping and rewrites the source address from the private IP to its own elastic IP:
+
+   `10.1.2.50` → `203.0.113.10`
+
+4. The NAT gateway is in the public subnet, whose route table sends internet traffic to the internet gateway:
+
+   `0.0.0.0/0 -> internet gateway`
+
+5. The packet leaves the VPC through the internet gateway. The package repository sees the request coming from `203.0.113.10`.
+
+6. The response comes back to `203.0.113.10`, enters through the internet gateway, and reaches the NAT gateway.
+
+7. The NAT gateway reverse-maps the response and rewrites the destination back to the private IP:
+
+   `203.0.113.10` → `10.1.2.50`
+
+8. Instance A receives the package data.
+
+The internet cannot start a connection to Instance A because there is no inbound mapping unless Instance A initiated the flow.
+
+## Path 2: Instance B calls the Secrets Manager API
+
+1. Instance B calls the Secrets Manager API hostname, for example:
+
+   `secretsmanager.us-east-1.amazonaws.com`
+
+2. Because the VPC has an interface endpoint for Secrets Manager, DNS resolves that hostname to the endpoint’s private ENI IP:
+
+   `10.1.2.99`
+
+3. The packet has:
+
+   Source: `10.1.2.51`  
+   Destination: `10.1.2.99`
+
+4. `10.1.2.99` is inside the VPC CIDR, so the packet follows the local route and stays inside the VPC.
+
+5. The endpoint ENI receives the request if the endpoint’s security group allows HTTPS from `10.1.2.51`.
+
+6. AWS PrivateLink carries the request to the Secrets Manager service over the AWS network — no internet, no NAT gateway, no public IP.
+
+7. The secret response travels back along the same path:
+
+   Secrets Manager → PrivateLink → endpoint ENI → Instance B
+
+## Key difference
+
+- Instance A’s internet traffic **leaves the VPC** through the NAT gateway.
+- Instance B’s AWS API traffic **never leaves the VPC** because it uses a VPC endpoint.
+control-assistant: ## Path 1: Instance B → AWS service API via VPC endpoint
+
+From the diagram, this is the lower arrow:
+
+**Instance B → VPC endpoint (ENI) → AWS service API via PrivateLink**
+
+1. **Instance B** in the private subnet sends a request to an AWS service, for example Secrets Manager.
+2. Because the VPC has an interface endpoint for that service, DNS resolves the service name to the endpoint’s **ENI private IP** in the same subnet.
+3. The destination is inside the VPC CIDR, so the packet follows the subnet’s local route and never goes to the NAT gateway or the internet.
+4. The **VPC endpoint ENI** receives the packet. Its security group controls whether the traffic is allowed.
+5. **AWS PrivateLink** carries the request from the endpoint ENI to the AWS service API entirely over the AWS network.
+
+The reply travels back the same way: AWS service → PrivateLink → endpoint ENI → Instance B.
+
+No internet, no NAT gateway, and no public IP is involved.
+
+## Path 2: Private subnet → internet via NAT gateway
+
+From the diagram, this is the upper arrow:
+
+**Private subnet traffic → NAT gateway → Internet**
+
+1. A private instance, such as Instance B, sends a packet to a public internet address.
+2. The private subnet’s route table has a default route:
+
+   `0.0.0.0/0 → NAT gateway`
+
+   So the packet is sent to the **NAT gateway**, which lives in the public subnet.
+3. The **NAT gateway** receives the packet, records a stateful mapping for that flow, and rewrites the source address from the instance’s private IP to the NAT gateway’s **elastic IP address**. This is the source NAT step labeled in the diagram.
+4. The NAT gateway is in a public subnet, so its own route table sends the traffic to the **internet gateway**.
+5. The packet leaves the VPC through the internet gateway and reaches the internet.
+
+When the reply comes back to the elastic IP, the NAT gateway reverses the translation and sends the reply back to the original private instance.
+
+Because the NAT gateway only creates a mapping for flows initiated from inside the VPC, the internet cannot use that path to start a connection back into the private subnet.
+control-assistant: To connect two VPCs with VPC peering:
+
+1. **Create the peering connection**  
+   In the VPC console, go to **Peering Connections** → **Create Peering Connection**. Choose the requester VPC and the accepter VPC. The peer can be in the same account or a different account, and in the same Region or a different Region.
+
+2. **Accept the peering connection**  
+   If the accepter VPC is in a different account, the owner of that account must accept the request. Otherwise the connection stays pending.
+
+3. **Make sure the VPC CIDRs do not overlap**  
+   VPC peering requires non-overlapping IPv4 and IPv6 CIDR blocks between the two VPCs. Overlapping ranges will not work.
+
+4. **Update route tables in both VPCs**  
+   In each VPC, for every route table that needs to reach the other VPC, add a route:
+
+   - Destination: the peer VPC’s CIDR
+   - Target: the peering connection ID
+
+   If only some subnets need to communicate, update only the route tables for those subnets.
+
+5. **Allow traffic in security groups and NACLs**  
+   - Security groups: allow traffic from the peer VPC’s CIDR, or from a specific IP, or from a peer security group in the same Region. Security groups are stateful, so return traffic is allowed automatically.
+   - NACLs: if you use network ACLs, allow both inbound and outbound traffic, including ephemeral ports, because NACLs are stateless.
+
+6. **Optional: enable DNS resolution across the peer**  
+   If you want private DNS names, such as EC2 private DNS names, to resolve across the peering connection:
+   - Enable **DNS hostnames** and **DNS resolution** on both VPCs.
+   - On the peering connection itself, enable the DNS resolution settings for the direction you need.
+
+Important limitations to remember:
+
+- VPC peering is **not transitive**. If VPC A peers with VPC B and VPC B peers with VPC C, A cannot reach C through B.
+- Peering does **not allow edge-to-edge routing**. For example, a VPC cannot use the internet gateway, NAT gateway, VPN, or Direct Connect of a peer VPC. Each VPC must use its own network edge for those services.
+transcript: transcripts/probes-m02-control-assistant.md

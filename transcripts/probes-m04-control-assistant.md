@@ -1,0 +1,201 @@
+# Learner conversation transcript
+## Run — 2026-09-28T18:44:55Z (replay)
+- Helper: control-assistant (helpers/control-assistant.md)
+- Module: modules/04-tls-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Base URL: https://api.deepseek.com/anthropic
+
+### Turn 1
+- Helper: control-assistant
+- Module: modules/04-tls-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:44:59Z
+
+Learner:
+
+What does the TLS handshake accomplish, and why does the connection end up encrypted with a symmetric session key rather than the server's public key?
+
+Helper reply (verbatim):
+
+The TLS handshake accomplishes three main things:
+
+1. **Negotiates parameters** — protocol version, cipher suite, and other settings.
+2. **Authenticates the server** — the server presents its certificate and proves it holds the matching private key.
+3. **Establishes a shared session key** — both client and server derive the same symmetric key, then confirm the handshake with Finished messages.
+
+After the handshake, application data is encrypted with that **symmetric session key**.
+
+The connection does **not** use the server’s public key for bulk encryption because public-key/asymmetric cryptography is much slower than symmetric encryption. Asymmetric crypto is used during the handshake to authenticate the server and agree on keys, but it is too expensive for encrypting all application traffic. Symmetric encryption is fast and efficient, so the handshake “bootstraps” a symmetric session key that both sides use for the rest of the connection.
+
+### Turn 2
+- Helper: control-assistant
+- Module: modules/04-tls-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:45:02Z
+
+Learner:
+
+Explain that more simply.
+
+Helper reply (verbatim):
+
+The TLS handshake does three things:
+
+1. Client and server agree on how to talk securely.
+2. The server proves who it is.
+3. They both create the same secret key.
+
+After that, they use that secret key to encrypt everything.
+
+They don’t use the server’s public key for the whole conversation because it’s too slow. The public key is only used at the start to prove identity and help create the secret key. The secret key is fast, so it’s used for all the actual data.
+
+### Turn 3
+- Helper: control-assistant
+- Module: modules/04-tls-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:45:13Z
+
+Learner:
+
+Give me a concrete example: a browser opens https://api.example.com against a server that hosts many names. Walk through the handshake and say which part lets the server present the right certificate.
+
+Helper reply (verbatim):
+
+Example: a browser opens `https://api.example.com`. The server at that IP also hosts `www.example.com` and `admin.example.com`, so it has multiple certificates.
+
+1. **ClientHello**  
+   The browser sends a ClientHello containing:
+   - supported TLS versions,
+   - supported cipher suites,
+   - **SNI = `api.example.com`**.
+
+   This **SNI field** is the part that lets the server present the right certificate, because the server needs to know which hostname the browser wants before it chooses a certificate.
+
+2. **Server response**  
+   The server reads the SNI value, selects the certificate for `api.example.com`, and replies with:
+   - its chosen cipher parameters,
+   - the `api.example.com` certificate chain,
+   - proof that it holds the matching private key.
+
+3. **Client validation and key agreement**  
+   The browser validates the certificate: it checks the chain and confirms the certificate is valid for `api.example.com`. Both sides then derive the same symmetric session key.
+
+4. **Finished and application data**  
+   The browser sends its Finished message, and from then on the HTTP request and response are encrypted with the shared symmetric session key.
+
+So, in short: the **SNI extension in the ClientHello** tells the server which hostname the client wants, allowing the server to present the correct certificate for `api.example.com`.
+
+### Turn 4
+- Helper: control-assistant
+- Module: modules/04-tls-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:45:37Z
+
+Learner:
+
+In the diagram at the end of the module, walk through the handshake message by message and say what each side learns or proves at each step.
+
+Helper reply (verbatim):
+
+The diagram is simplified: the server’s response is shown as one line, but it contains several related messages.
+
+**1. Client → Server: ClientHello (versions, ciphers, SNI)**
+
+- **Server learns:** which TLS versions and cipher suites the client supports, and which hostname the client wants — via SNI.
+- **Client proves:** nothing yet.
+- **Why it matters here:** the SNI value lets the server choose the certificate for the requested hostname.
+
+**2. Server → Client: ServerHello, Certificate, key exchange, Finished**
+
+This is really several things:
+
+- **ServerHello**  
+  Client learns the chosen protocol version, cipher suite, and key-exchange parameters.
+
+- **Certificate**  
+  Client sees the server’s claimed identity: its certificate chain. If SNI was used, this should be the certificate for that hostname.
+
+- **Key exchange**  
+  Both sides get the information needed to derive the same symmetric session key. Combined with the certificate, this is where the server proves it holds the private key matching that certificate.
+
+- **Server Finished**  
+  Client learns that the server has derived the same session key and that the handshake was not tampered with.
+
+- **Client validates the server certificate**  
+  This is where the client verifies that the server’s identity is genuine, not just claimed. That validation is covered properly in Module 5.
+
+**3. Client → Server: Finished**
+
+- **Server learns:** the client has derived the same session key and the handshake was not tampered with.
+- **Client proves:** no identity. The server still does not know who the client is. This is why it is called one-way TLS.
+
+**4. Application data**
+
+Both sides now encrypt traffic with the shared symmetric session key. The server is authenticated; the client is not.
+
+One subtlety: the server’s Finished message proves it has the right session key, but by itself it does not prove identity. The identity proof comes from the certificate plus the server using the matching private key during the key exchange/signing step.
+
+### Turn 5
+- Helper: control-assistant
+- Module: modules/04-tls-foundations.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:45:49Z
+
+Learner:
+
+How do I pin the server certificate in a mobile app so it only ever trusts one specific certificate?
+
+Helper reply (verbatim):
+
+To pin one specific server certificate in a mobile app, you embed that exact certificate (or its hash) in the app and reject any TLS handshake where the server presents a different certificate.
+
+Here’s the general approach:
+
+1. **Decide what to pin**  
+   Since you want “only ever trusts one specific certificate,” pin the exact leaf certificate. Common options:
+   - Embed the full DER-encoded certificate.
+   - Embed its SHA-256 hash (less storage, but same effect).
+   - Pin the public key (SPKI hash) if you need to survive certificate renewal without app changes — but that is not “one specific certificate” exactly.
+
+2. **Obtain the certificate**  
+   Export the leaf certificate from the server, usually in DER or PEM format. The DER form is easiest to embed as bytes or compare.
+
+3. **Embed it in the app**  
+   Store the certificate file in the app bundle/assets, or hard-code its hash as a constant.
+
+4. **Override the default TLS validation**  
+   During the TLS handshake, the app must compare the certificate presented by the server with the pinned one.
+
+   **iOS / URLSession**  
+   Implement `URLSessionDelegate`’s `didReceive challenge` and in the server trust evaluation, extract the server’s leaf certificate data and compare it to the embedded certificate data (or hash). If it doesn’t match, cancel the connection.
+
+   **Android / OkHttp**  
+   Use `CertificatePinner`:
+   ```kotlin
+   val client = OkHttpClient.Builder()
+       .certificatePinner(
+           CertificatePinner.Builder()
+               .add("api.example.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+               .build()
+       )
+       .build()
+   ```
+   Replace the hash with the SHA-256 hash of the certificate’s DER-encoded SubjectPublicKeyInfo (or the certificate itself, depending on the library).
+
+   **Android / HttpsURLConnection**  
+   Use a custom `TrustManager` that checks the presented certificate against the embedded one, then initialize an `SSLContext` with it.
+
+5. **Test failure**  
+   Connect to a server presenting a different certificate (or temporarily change the server cert) and verify the connection is rejected.
+
+Important caveats:
+
+- If the pinned certificate expires or is replaced, the app will stop working until you release an update with the new pin.
+- Pinning the exact leaf certificate is the most brittle option. Pinning the public key or intermediate CA is often preferred, but it weakens the “only this exact certificate” guarantee.
+- Revocation handling is not solved by pinning. You still need a strategy for compromised keys.

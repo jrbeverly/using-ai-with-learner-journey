@@ -1,0 +1,14 @@
+# probe 5.1 — concept (connects to Module 4)
+The module says validation means building a chain from the presented certificate to an anchor in the trust store. Connect this to Module 4: at which point in the handshake does this happen, and what does it give the client that the rest of the handshake does not?
+
+# probe 5.2 — follow-up on 5.1
+Explain that more simply.
+
+# probe 5.3 — example
+Give me a concrete example: a client connects to api.example.com and is presented a leaf certificate and an intermediate. Walk through every check the client performs before accepting the connection.
+
+# probe 5.4 — diagram
+In the diagram at the end of the module, walk from the trust anchor down to the leaf certificate: who signs what, and what does the client have to check to trust the leaf?
+
+# probe 5.5 — out-of-corpus
+How would I run my own CA on-premises with OpenSSL instead of using AWS Private CA?

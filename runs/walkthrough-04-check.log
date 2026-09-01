@@ -1,0 +1,18 @@
+knowledge-check: Let's start with the handshake: in your own words, what does the TLS handshake accomplish?
+knowledge-check: Right: you named the negotiated parameters (protocol versions, cipher suites, SNI), the server proving possession of the private key, and both sides deriving a shared session key before application data flows. That matches the module's outcome: agreed symmetric keys and an authenticated server [module].
+
+Next: why does TLS end with symmetric encryption instead of continuing with asymmetric encryption for the whole connection?
+knowledge-check: There's a gap here. The server's public key is not what encrypts the stream. The handshake uses asymmetric cryptography to authenticate and agree on a key; after that, both sides encrypt application data with the shared symmetric session key [module]. The reason is that asymmetric cryptography is too slow for bulk data, while symmetric encryption is fast [module].
+
+To re-check this smaller: what would be the main practical problem if the client encrypted every byte of application data with the server's public key?
+knowledge-check: Yes, that's correct: the stream is encrypted with a symmetric session key derived during the handshake, and asymmetric cryptography is used to authenticate the server and agree on that key [module]. That is the "ends with symmetric encryption" purpose.
+
+Next: what does the server certificate prove to the client?
+knowledge-check: That captures it: the certificate is what lets the client know which server it is talking to [module]. The binding of the key to the name is the certificate's mechanism, which Module 5 will cover in detail [general].
+
+Last one: why does ordinary TLS not authenticate the client?
+knowledge-check: Right: in ordinary TLS the server proves its identity but the client proves nothing, so the server knows only what the client chose to send [module]. That asymmetry is what mutual TLS removes later [module].
+
+Closing note: the handshake's outcome, the reason for symmetric encryption, what the certificate proves, and why ordinary TLS is one-way all came through clearly. I don't see anything to record as unclear. This is not a score — just a check of the conversation.
+knowledge-check: Stopping here. Nothing from this check needs recording as unclear — the handshake, symmetric session key, server certificate, and one-way TLS all came through clearly. This is not a score.
+transcript: runs/walkthrough-walkthrough-04-check.part.md

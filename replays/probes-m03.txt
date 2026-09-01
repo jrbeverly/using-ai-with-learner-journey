@@ -1,0 +1,14 @@
+# probe 3.1 — concept (connects to Modules 1 and 2)
+The module says a Site-to-Site VPN makes two private networks behave as if directly connected. Connect this to Modules 1 and 2: why is a path across the public internet needed at all, and what does the tunnel hide?
+
+# probe 3.2 — follow-up on 3.1
+Explain that more simply.
+
+# probe 3.3 — example
+Give me a concrete example: the office network is 10.8.0.0/16 and the VPC is 10.1.0.0/16, connected by a Site-to-Site VPN. What must routing on both sides know for a packet to cross, and how do static routes and BGP differ at doing it?
+
+# probe 3.4 — diagram
+In the diagram at the end of the module, trace the path of an engineer's laptop into VPC B, and separately the data center's path into VPC A. Name every component each path passes through.
+
+# probe 3.5 — out-of-corpus
+How would I set up a WireGuard tunnel into my VPC instead of using IPsec?

@@ -1,0 +1,6 @@
+knowledge-check: Let's start with the request trace.
+
+In your own words, walk me through what happens from an engineer's laptop calling `api.internal.example.com` until a service instance receives the request. Include where the caller's certificate is validated and how the validated identity reaches the service.
+knowledge-check: Right on the trace. You correctly included the Client VPN leg with the client certificate, DNS to the ALB, the ALB presenting its server certificate and requesting a client certificate, validating the chain against the trust store plus CRL, forwarding with `X-Amzn-Mtls` identity headers, and the application authorizing from those headers. [module] That matches the module's walkthrough.
+
+Next: what are the trust boundaries a request crosses in this architecture, and what trust decision happens at each one?

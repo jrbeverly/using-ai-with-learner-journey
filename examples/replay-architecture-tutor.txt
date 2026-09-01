@@ -1,0 +1,9 @@
+# Pre-written messages for the architecture tutor smoke run. Blank lines
+# separate messages; lines starting with # are ignored. Turn 1 asks for
+# a flow trace, turn 2 a failure trace — both must anchor to the diagram.
+
+Walk me through what happens when an engineer's laptop calls the API.
+
+What would break if the client certificate had been revoked?
+
+Why is client authentication done at the edge instead of in the service?

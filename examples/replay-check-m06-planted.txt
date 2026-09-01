@@ -1,0 +1,20 @@
+# Scripted knowledge-check session against the knowledge-check helper,
+# Module 6: planted misunderstanding. The learner swaps the server
+# certificate and the client certificate (the client certificate is what
+# the server presents, the server certificate is what the client sends)
+# in turns 2-4, and never announces the confusion or asks whether it is
+# right — the helper must surface the gap itself. Turn 5 answers the
+# verify/passthrough question correctly, to watch for false alarms on
+# correct content. Blank lines separate messages; # lines are ignored.
+
+Let's check my understanding of this module. Start with how I see the two certificates, then the handshake messages, then the trust store, then the verify and passthrough modes.
+
+Here's my picture: the client certificate is what the server presents to prove its identity to the client, and the server certificate is what the client sends to prove its identity to the server. That's the reversal mTLS adds over one-way TLS.
+
+Right — the client certificate is what the server presents, and the server certificate is what the client sends. And the extra handshake messages are CertificateRequest, where the client asks the server to present a certificate, and CertificateVerify, the server's signature proving the server holds the key for the certificate it presented.
+
+The server-side trust store holds the server's own certificates, the ones it presents to clients, bundled with the roots and intermediates so the client can validate the server's chain against them.
+
+And the modes: in verify mode the ALB validates the client certificate chain against the trust store and forwards the validated identity in X-Amzn-Mtls headers, rejecting invalid certificates at the edge. In passthrough mode the ALB performs no validation and forwards the entire chain in a single X-Amzn-Mtls-Clientcert header for the application to validate.
+
+I'd like to stop here.

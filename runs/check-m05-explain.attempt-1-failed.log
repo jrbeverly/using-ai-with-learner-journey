@@ -1,0 +1,6 @@
+knowledge-check: Go ahead — in your own words, walk me through how a client decides a server certificate is trusted, including the checks it makes along the way.
+knowledge-check: One piece to correct: the signing direction is reversed in your chain. The root's private key signs the intermediate, and the intermediate's private key signs the leaf. The leaf is the thing being signed — it doesn't sign anything upward. `[module]`
+
+You had the client-side checks right: SAN match, validity dates, and revocation. `[module]`
+
+Smaller re-check: whose key signs the leaf certificate?

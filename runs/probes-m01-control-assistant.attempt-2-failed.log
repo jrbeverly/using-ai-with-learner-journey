@@ -1,0 +1,14 @@
+control-assistant: Network address translation (NAT) is a function, usually performed by a router or gateway, that rewrites IP addresses in packets as they pass between a private network and the public internet.
+
+Hosts on private ranges need NAT because their addresses come from RFC 1918 ranges such as `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`. These addresses are never routed across the public internet. When a private host sends a packet to the internet, the NAT device replaces the private source address with its own public IP address, and remembers the mapping. When the reply comes back, the NAT device translates the public destination address back to the original private address and forwards it to the host. This lets many private hosts share one or more public IP addresses.
+control-assistant: NAT is like a front desk for a building.
+
+Inside the building, people use internal room numbers that don't work as street addresses. When someone inside sends a package to the outside world, the front desk replaces the internal room number with the building’s public street address and keeps a note of who sent it. When a reply comes back to the building, the front desk checks the note and delivers it to the right room.
+
+In networking:
+
+- Private IP addresses are like internal room numbers.
+- The NAT device is the front desk.
+- The public IP address is the street address.
+
+So NAT lets devices with private addresses use the internet by sharing a public address and translating replies back to the correct device.

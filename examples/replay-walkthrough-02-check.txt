@@ -1,0 +1,14 @@
+# Module 2 knowledge check. Topics steered per the summary; clean
+# answers. Five turns.
+
+Let's check my understanding of this module. Ask me first about the difference between public and private subnets, then what a NAT gateway does and does not do, then how security groups filter traffic, then how VPC endpoints reach AWS services.
+
+A public subnet has a route to an internet gateway, so its resources can receive traffic from the internet if permitted. A private subnet has no route to the internet at all: no inbound traffic can reach it, and it cannot initiate outbound traffic without help.
+
+A NAT gateway lives in a public subnet, holds an elastic IP address, and translates the private source addresses of outbound packets to its own public address, translating replies back. Because the mapping only exists for flows the private instances initiated, the internet cannot initiate connections inward.
+
+A security group is a stateful firewall attached to a resource that allows traffic by port, protocol, and source. Stateful means a reply to an allowed outbound flow is automatically allowed back.
+
+An interface endpoint places an elastic network interface with private IPs into the subnets and connects, via AWS PrivateLink, to the service's API, so traffic never leaves the AWS network and never uses a public IP.
+
+I'd like to stop here.

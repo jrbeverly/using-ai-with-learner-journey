@@ -1,0 +1,32 @@
+control-assistant: Network address translation (NAT) is a process where a router or other network device rewrites the source and/or destination IP address of packets as they pass through it.
+
+For a host on a private IP range, the most common use is **source NAT**, also called NAT for outbound traffic:
+
+1. A private host sends a packet with a source address like `10.0.1.5`.
+2. The NAT device replaces that private source address with its own public IP address.
+3. The NAT device remembers the mapping, often using source ports to keep connections distinct.
+4. When the reply comes back from the internet, the NAT device translates the public destination address back to the private host’s address and forwards the packet inside the private network.
+
+Private ranges such as `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` are defined in RFC 1918. Routers on the public internet do not forward packets with these addresses. Without NAT, a private host could send a packet out, but:
+
+- the destination server would see an unusable private source address, and
+- the reply could never be routed back to the private host because internet routers do not know how to reach private address ranges.
+
+NAT solves this by hiding the private addresses behind a public address, allowing many private hosts to share one public IP while still receiving the correct replies.
+control-assistant: NAT is like a translator at the edge of a private network.
+
+- Your device has a private address, such as `10.0.1.5`.
+- The public internet does not understand or route private addresses.
+- Before your traffic goes out, NAT replaces your private source address with a public one.
+- It remembers which private device made the request.
+- When the reply comes back, NAT changes the public destination back to your private address and sends it to your device.
+
+So NAT lets many private devices share one public address while still getting the correct replies.
+
+Why it is needed: private IP addresses are not allowed on the public internet. Without NAT, your request might leave the network, but the reply could never find its way back to you.
+
+Simple analogy:
+
+- Private IP = an internal office phone extension
+- Public IP = the company’s main phone number
+- NAT = the receptionist who takes outside calls on the main number and transfers them to the right desk

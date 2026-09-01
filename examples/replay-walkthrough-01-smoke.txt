@@ -1,0 +1,13 @@
+# Module 1 tutor segment. The learner has read the module (sections and
+# diagram) and starts with the helper the experiment's README example
+# pairs with this module. Learner state present (walkthrough-state.md,
+# stage S1): current module 1, one unclear concept (how NAT translates
+# reply packets back), two recent questions. Four turns.
+
+I've just read the module. The "Routing: the next-hop decision" section says the most specific matching prefix wins, and the diagram shows router A with entries 10.0.2.0/24 -> 10.0.9.2 and the default route 0.0.0.0/0 -> 10.0.9.1. Why does a packet for 10.0.2.9 take the first entry rather than the default route?
+
+Explain that more simply, please.
+
+Now give me the concrete example from the module's diagram: host A (10.0.1.5) sends a packet to host B (10.0.2.9). Walk through every route-table lookup and decision along the way, including what router B does when the packet arrives.
+
+The "Private address ranges" section says a NAT device must translate the replies back. What must the NAT device remember to make that work?

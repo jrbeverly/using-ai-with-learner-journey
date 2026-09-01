@@ -1,0 +1,9 @@
+# Module 5 tutor segment with the grounded tutor. Four turns.
+
+I've just read the module. It says anyone can mint a certificate, and one is only worth what its issuer's signature is worth. Unpack that: why does the root CA's self-signature end the chain of worth?
+
+In the diagram, walk from the trust anchor down to the leaf certificate: who signs what at each step, and what does the client have to check before it trusts the leaf?
+
+The "Revocation" section says a compromised private key makes a certificate worthless before its expiry date. What does revocation cover that the validity period doesn't?
+
+The module says AWS Private CA costs about $400/month in general-purpose mode and $50/month in short-lived mode, and that this constraint shapes the architecture in Module 7. What should I expect there?

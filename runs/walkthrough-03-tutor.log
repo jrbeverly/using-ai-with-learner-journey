@@ -1,0 +1,15 @@
+grounded-tutor: The module states that every Site-to-Site VPN connection carries two IPsec tunnels to different AWS endpoints so that one tunnel can fail while the other continues carrying traffic [module]. The two tunnels are for redundancy, not because they have different roles.
+
+“Equivalent, not primary/backup” means neither tunnel is the designated active path with the other sitting idle as a standby [derived]. Both are usable paths, and if one endpoint or path fails, the remaining tunnel is already there to carry the traffic [module].
+grounded-tutor: With static routes, the two example networks would need manual entries on both ends: the office router would need a route saying “reach 10.1.0.0/16 through the tunnel,” and the AWS side would need a route saying “reach 10.8.0.0/16 through the customer gateway” [derived]. The connection would work, but those entries are fixed.
+
+BGP replaces that manual step: each side announces which networks it can reach, and the routes propagate automatically [module]. If the VPC adds another CIDR such as 10.2.0.0/16, or the office adds a subnet within 10.8.0.0/16, BGP shares that change without someone editing route tables [module]. That is why the module prefers BGP wherever the device supports it: it survives prefix changes without manual edits [module].
+grounded-tutor: Data center path: on-premises network (10.8.0.0/16) → customer gateway device (router) → two IPsec tunnels → transit gateway → VPC A [module]. The transit gateway’s route tables choose VPC A as the destination [module].
+
+Engineer laptop path: engineer laptop → Client VPN endpoint over TLS → transit gateway → VPC B [module].
+
+The paths differ because Site-to-Site VPN connects whole private networks through a customer gateway device and redundant IPsec tunnels, while Client VPN connects an individual person through a managed, OpenVPN-based endpoint over TLS [module]. So the laptop path has no customer gateway and no IPsec tunnels; it uses the Client VPN service to reach the same transit gateway [derived].
+grounded-tutor: The module's reasoning is that a virtual private gateway is a one-to-one attachment: a VPN attached to a VGW serves exactly one VPC [module]. If the same on-premises network needs to reach several VPCs, per-VPC VGWs would mean multiple separate VPN connections and duplicated route management on each VPC's gateway [derived]. Likewise, if several VPNs need to reach a set of VPCs, each VPC would need its own gateway arrangement [derived].
+
+A transit gateway changes this to a hub model: the VPCs, Site-to-Site VPNs, and other networks all attach to one regional routing hub, and its route tables decide who can reach whom [module]. That is why the module sets the position at "more than one VPC or one VPN" — with one of each, a VGW is enough; beyond that, centralizing on a transit gateway avoids repeated per-VPC VPN attachments and route configuration [module][derived].
+transcript: runs/walkthrough-walkthrough-03-tutor.part.md

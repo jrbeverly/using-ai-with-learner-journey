@@ -1,0 +1,11 @@
+# Module 2 tutor segment with the grounded tutor. The learner has read
+# the module (sections and diagram) and updated the learner state to
+# current module 2. Four turns.
+
+I've just read the module. The "Subnets and availability zones" section draws the public/private line by routes. What exactly makes a subnet public in this model, and what makes one private?
+
+In the diagram, instance B reaches the AWS service API through the VPC endpoint, and the private subnet's outbound traffic leaves through the NAT gateway. Walk both paths and say what each component does along the way, and why instance B's path does not go through the NAT gateway.
+
+The Position sentence says a NAT gateway is for outbound-only traffic and a service that must be reachable from outside belongs behind an ingress point in a public subnet instead. Why is that the rule?
+
+The "Filtering: security groups" section calls a security group a stateful firewall. What does stateful mean here, and what does it change for the instances in the private subnet?

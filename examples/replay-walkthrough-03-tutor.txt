@@ -1,0 +1,9 @@
+# Module 3 tutor segment with the grounded tutor. Four turns.
+
+I've just read the module. The Site-to-Site section says every connection carries two IPsec tunnels and calls them equivalent, not primary/backup. If they're equivalent, why carry two at all?
+
+The "Routing across the tunnel" section prefers BGP over static routes. Using the module's example networks — office 10.8.0.0/16, VPC 10.1.0.0/16 — what does BGP do that static routes cannot?
+
+In the diagram, trace the data center's path into VPC A and the engineer's laptop path into VPC B. Name every component each path passes through, and say why the laptop's path looks different from the data center's.
+
+The Position sentence says to terminate VPNs on a transit gateway once more than one VPC or one VPN is involved. Why not just attach a virtual private gateway to each VPC?

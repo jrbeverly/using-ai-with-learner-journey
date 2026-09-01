@@ -1,0 +1,573 @@
+# Learner conversation transcript
+## Run — 2026-09-28T18:46:32Z (replay)
+- Helper: control-assistant (helpers/control-assistant.md)
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Base URL: https://api.deepseek.com/anthropic
+
+### Turn 1
+- Helper: control-assistant
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:46:46Z
+
+Learner:
+
+The module says validation means building a chain from the presented certificate to an anchor in the trust store. Connect this to Module 4: at which point in the handshake does this happen, and what does it give the client that the rest of the handshake does not?
+
+Helper reply (verbatim):
+
+In TLS, certificate validation is not a separate handshake message; it is a local check the client performs immediately after receiving the server’s `Certificate` message.
+
+- In **TLS 1.3**, the client receives `Certificate` and then validates the chain before accepting the server’s `CertificateVerify` signature.
+- In **TLS 1.2**, the client also validates the certificate after receiving it, before trusting the public key used in the key exchange or server signature.
+
+So the ordering is roughly:
+
+```text
+ClientHello
+ServerHello
+Certificate        <-- client validates chain here
+CertificateVerify  <-- client verifies proof of private key here
+Finished
+```
+
+What the rest of the handshake gives the client is proof that the peer **possesses the private key** matching the certificate. For example, `CertificateVerify` is a signature the peer can only make with that private key.
+
+What certificate validation adds is **identity binding**. It answers the question: “Should I trust that this key belongs to the hostname I am trying to reach?”
+
+Specifically, validation:
+
+- builds the chain from the leaf certificate to a trust anchor in the client’s trust store,
+- checks the validity period,
+- checks a SAN against the expected hostname,
+- and checks revocation status.
+
+Together, those checks give the client:
+
+```text
+The key holder is authorized by a CA I trust to represent api.example.com.
+```
+
+Without that, the handshake would only prove:
+
+```text
+The peer controls the private key for some certificate.
+```
+
+An attacker can do that. Certificate validation is what prevents an active MITM from simply presenting its own key pair and completing the handshake.
+
+### Turn 2
+- Helper: control-assistant
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:46:53Z
+
+Learner:
+
+Explain that more simply.
+
+Helper reply (verbatim):
+
+During the handshake, the server sends its certificate. The client checks it right then, before trusting the server.
+
+The rest of the handshake proves:
+
+> “This server has the private key for that certificate.”
+
+Certificate validation adds:
+
+> “And that certificate is for the right hostname, issued by a CA I already trust.”
+
+So the handshake proves the server controls a key. Validation proves the key is actually tied to the identity the client is trying to reach. An attacker can control a key, but not a certificate the client trusts for that hostname.
+
+### Turn 3
+- Helper: control-assistant
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:47:24Z
+
+Learner:
+
+Give me a concrete example: a client connects to api.example.com and is presented a leaf certificate and an intermediate. Walk through every check the client performs before accepting the connection.
+
+Helper reply (verbatim):
+
+Assume the client is connecting to `https://api.example.com`, and the server presents:
+
+```text
+leaf certificate:
+  subject: CN=api.example.com
+  SAN:     DNS:api.example.com
+  issuer:  CN=Example Intermediate CA
+  validity: 2024-01-01 to 2025-01-01
+
+intermediate certificate:
+  subject: CN=Example Intermediate CA
+  issuer:  CN=Example Root CA
+  CA:      true
+
+client trust store:
+  contains CN=Example Root CA as a trust anchor
+```
+
+Here is the walk-through.
+
+## 1. Client receives the certificate chain
+
+The server sends the leaf certificate and the intermediate in the TLS `Certificate` message.
+
+The client must build a chain from the leaf up to a root it already trusts.
+
+```text
+leaf          -> signed by Example Intermediate CA
+intermediate  -> signed by Example Root CA
+root          -> found in the client trust store
+```
+
+The client does **not** trust the root just because the server sent it. The root must already be in the client’s trust store.
+
+If the chain cannot reach a trusted root, validation fails.
+
+## 2. Client verifies the signatures along the chain
+
+The client checks that each certificate’s signature is valid.
+
+- The leaf certificate is verified using the intermediate’s public key.
+- The intermediate certificate is verified using the root’s public key.
+
+This proves:
+
+```text
+The intermediate really issued this leaf.
+The root really issued this intermediate.
+```
+
+It also proves the certificates have not been tampered with.
+
+## 3. Client checks the trust anchor
+
+The client confirms that the root is a trust anchor it was configured to trust.
+
+If the client trusts the root, then it can trust certificates signed by intermediates that chain back to that root.
+
+## 4. Client checks validity dates
+
+The client checks the current time against the validity period of:
+
+- the leaf certificate
+- the intermediate certificate
+
+If either is expired or not yet valid, the handshake fails.
+
+Example:
+
+```text
+leaf validity: 2024-01-01 to 2025-01-01
+intermediate validity: 2023-01-01 to 2033-01-01
+current time must be inside both windows
+```
+
+## 5. Client checks the hostname
+
+The client compares the hostname it is trying to reach — `api.example.com` — against the leaf certificate’s subject alternative names.
+
+Here the leaf has:
+
+```text
+SAN: DNS:api.example.com
+```
+
+That matches exactly.
+
+Modern clients check the SAN. They generally do **not** use the Common Name for hostname verification if no SAN is present.
+
+A wildcard such as `*.example.com` would also match `api.example.com`, but not something like `foo.api.example.com`.
+
+## 6. Client checks certificate usage constraints
+
+The client confirms the certificates are being used for the right purpose.
+
+For the intermediate:
+
+```text
+Basic Constraints: CA: true
+Key Usage: keyCertSign
+```
+
+This means the intermediate is allowed to sign other certificates.
+
+For the leaf:
+
+```text
+Extended Key Usage: serverAuth
+Key Usage: digitalSignature or keyEncipherment
+```
+
+This means the leaf is allowed to be used as a TLS server certificate and can be used for the handshake’s signing or key exchange.
+
+If the leaf said `clientAuth` only, or the intermediate were not allowed to sign certificates, validation would fail.
+
+## 7. Client checks revocation
+
+The client may check whether any certificate in the chain has been revoked.
+
+This can happen via:
+
+- CRL: the client downloads a certificate revocation list and checks the serial numbers.
+- OCSP: the client asks a responder whether the certificate is still valid.
+
+For example, the client may check:
+
+```text
+leaf serial number -> not revoked
+intermediate serial number -> not revoked
+```
+
+Some TLS clients do this optionally. As noted in the module, AWS mutual TLS uses CRLs you supply.
+
+If a certificate is revoked, the client must reject the connection.
+
+## 8. Client verifies proof of private key possession
+
+After validating the certificate, the client still needs proof that the server actually holds the matching private key.
+
+In TLS 1.3, the server sends a `CertificateVerify` message containing a signature over the handshake transcript. The client verifies that signature using the public key from the leaf certificate.
+
+This prevents an attacker from simply replaying somebody else’s valid certificate.
+
+If the server does not own the private key, the signature verification fails.
+
+## 9. Client verifies the handshake integrity
+
+Finally, the client verifies the server’s `Finished` message using the derived handshake keys.
+
+This ensures that the handshake messages were not tampered with.
+
+If any of these checks fail, the client aborts the handshake. For example, it might send a TLS alert such as:
+
+- `unknown_ca`
+- `certificate_expired`
+- `bad_certificate`
+- `handshake_failure`
+
+Only after all checks pass does the client accept the connection and begin sending application data.
+
+### Turn 4
+- Helper: control-assistant
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:47:38Z
+
+Learner:
+
+In the diagram at the end of the module, walk from the trust anchor down to the leaf certificate: who signs what, and what does the client have to check to trust the leaf?
+
+Helper reply (verbatim):
+
+Starting from the diagram:
+
+```text
+client trust store
+        |
+        | "I trust this root"
+        v
+root CA certificate  (self-signed)
+        |
+        | root private key signs the intermediate
+        v
+intermediate CA certificate
+        |
+        | intermediate private key signs the leaf
+        v
+leaf certificate  (SAN: api.example.com)
+        |
+        | paired with the leaf private key held by the server
+```
+
+## Who signs what
+
+- The **root CA certificate** is **self-signed** — the root signs its own certificate with its own private key.
+- The **root private key** signs the **intermediate CA certificate**.
+- The **intermediate private key** signs the **leaf certificate**.
+- The **leaf certificate** is not used to sign anything. It contains the **public key** whose matching private key is held by the server.
+
+So the signing direction is:
+
+```text
+root signs the intermediate
+intermediate signs the leaf
+leaf is the end-entity certificate
+```
+
+## How the client checks it
+
+To trust the leaf, the client checks:
+
+1. **The root is a trust anchor in its trust store.**  
+   If the client does not already trust the root, nothing below it matters.
+
+2. **The intermediate was really signed by the root.**  
+   The client uses the root’s public key to verify the intermediate’s signature.
+
+3. **The leaf was really signed by the intermediate.**  
+   The client uses the intermediate’s public key to verify the leaf’s signature.
+
+4. **The chain is complete.**  
+   The client must be able to connect:
+
+   ```text
+   leaf -> intermediate -> trusted root
+   ```
+
+5. **The leaf is valid for the connection being attempted.**  
+   Specifically:
+   - The current time is within the leaf’s validity period.
+   - A SAN in the leaf matches `api.example.com`.
+   - The leaf is allowed to be used as a TLS server certificate.
+   - The leaf and intermediate have not been revoked.
+
+6. **The server actually holds the leaf private key.**  
+   During the handshake, the server proves this with a signature the client verifies using the leaf’s public key.
+
+In short: the client starts from a root it already trusts, verifies each signature down the chain, and then checks that the leaf belongs to the server and is valid for the hostname it is connecting to.
+
+### Turn 5
+- Helper: control-assistant
+- Module: modules/05-certificates-and-trust.md
+- Learner state: none
+- Model: deepseek-v4-pro[1m] (max_tokens=8192)
+- Time: 2026-09-28T18:48:01Z
+
+Learner:
+
+How would I run my own CA on-premises with OpenSSL instead of using AWS Private CA?
+
+Helper reply (verbatim):
+
+Here’s a practical outline for running a private CA on-premises with OpenSSL. It mirrors the issuing-chain concept from the module: an offline root CA, an online intermediate CA, and leaf certificates for services.
+
+> **Security note**: The root CA private key should be generated and stored offline. Only the intermediate CA key is used for day-to-day signing. If the intermediate is compromised, you can revoke it and issue a new one without re-establishing trust in a new root.
+
+## 1. Set up the directory structure
+
+A typical layout:
+
+```bash
+mkdir -p /root/ca/root/{certs,crl,newcerts,private}
+mkdir -p /root/ca/intermediate/{certs,crl,newcerts,private}
+chmod 700 /root/ca/root/private
+chmod 700 /root/ca/intermediate/private
+```
+
+Create files the CA will use for tracking serial numbers and issued certificates.
+
+## 2. Create the root CA
+
+Generate a private key and self-signed certificate for the root CA.
+
+```bash
+# Generate the root CA private key (RSA or ECDSA)
+openssl genrsa -aes256 -out /root/ca/root/private/root.key 4096
+
+# Create a self-signed root certificate valid for, say, 10 years
+openssl req -x509 -new -key /root/ca/root/private/root.key \
+  -sha256 -days 3650 \
+  -subj "/C=US/O=Example Corp/CN=Example Root CA" \
+  -addext "basicConstraints=critical,CA:TRUE" \
+  -addext "keyUsage=critical,keyCertSign,cRLSign" \
+  -out /root/ca/root/certs/root.crt
+```
+
+The `basicConstraints=CA:TRUE` and `keyUsage=keyCertSign,cRLSign` are critical: they mark this certificate as a CA allowed to sign other certificates and CRLs.
+
+## 3. Create the intermediate CA
+
+Generate an intermediate key and CSR, then sign it with the root CA.
+
+```bash
+# Generate intermediate private key
+openssl genrsa -aes256 -out /root/ca/intermediate/private/intermediate.key 4096
+
+# Create a CSR for the intermediate
+openssl req -new -key /root/ca/intermediate/private/intermediate.key \
+  -sha256 \
+  -subj "/C=US/O=Example Corp/CN=Example Intermediate CA" \
+  -out /root/ca/intermediate/csr/intermediate.csr
+
+# Sign the intermediate CSR with the root CA
+openssl x509 -req -in /root/ca/intermediate/csr/intermediate.csr \
+  -CA /root/ca/root/certs/root.crt \
+  -CAkey /root/ca/root/private/root.key \
+  -CAcreateserial \
+  -days 1825 \
+  -sha256 \
+  -extfile <(printf "basicConstraints=critical,CA:TRUE,pathlen:0\nkeyUsage=critical,keyCertSign,cRLSign\n") \
+  -out /root/ca/intermediate/certs/intermediate.crt
+```
+
+The `pathlen:0` prevents the intermediate from signing further subordinate CAs. This is optional but common. The intermediate is now a CA that can sign leaf certificates.
+
+## 4. Configure OpenSSL to issue leaf certificates
+
+For a proper CA, use `openssl ca` with a configuration file that references a database and automatically manages serial numbers.
+
+Create `/root/ca/intermediate/openssl.cnf` with at least:
+
+```ini
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir               = /root/ca/intermediate
+certs             = $dir/certs
+crl_dir           = $dir/crl
+new_certs_dir     = $dir/newcerts
+database          = $dir/index.txt
+serial            = $dir/serial
+crlnumber         = $dir/crlnumber
+crl               = $dir/crl/intermediate.crl.pem
+private_key       = $dir/private/intermediate.key
+certificate       = $dir/certs/intermediate.crt
+default_days      = 375
+default_md        = sha256
+policy            = policy_loose
+copy_extensions   = copy
+unique_subject    = no
+
+[ policy_loose ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+```
+
+Then create the required files:
+
+```bash
+cd /root/ca/intermediate
+touch index.txt
+echo 1000 > serial
+echo 1000 > crlnumber
+```
+
+## 5. Issue a leaf certificate for a server
+
+Generate a server key and CSR, including the SAN. Sign it with the intermediate CA.
+
+```bash
+# Generate server private key
+openssl genrsa -out server.key 2048
+
+# Create a CSR with SAN (api.example.com)
+openssl req -new -key server.key \
+  -subj "/C=US/O=Example Corp/CN=api.example.com" \
+  -addext "subjectAltName=DNS:api.example.com,DNS:www.api.example.com" \
+  -out server.csr
+
+# Sign the CSR using the intermediate CA
+openssl ca -config /root/ca/intermediate/openssl.cnf \
+  -extensions server_cert \
+  -days 375 \
+  -notext \
+  -md sha256 \
+  -in server.csr \
+  -out server.crt
+```
+
+You also need `[ server_cert ]` section in the config, for example:
+
+```ini
+[ server_cert ]
+basicConstraints       = CA:FALSE
+keyUsage               = critical, digitalSignature, keyEncipherment
+extendedKeyUsage       = serverAuth
+subjectAltName         = @alt_names
+
+[ alt_names ]
+DNS.1 = api.example.com
+DNS.2 = www.api.example.com
+```
+
+Alternatively, if you don’t need a full CA database, you can use `openssl x509 -req` with `-extfile` to sign directly:
+
+```bash
+openssl x509 -req -in server.csr \
+  -CA /root/ca/intermediate/certs/intermediate.crt \
+  -CAkey /root/ca/intermediate/private/intermediate.key \
+  -CAcreateserial \
+  -days 375 \
+  -sha256 \
+  -extfile <(printf "subjectAltName=DNS:api.example.com\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n") \
+  -out server.crt
+```
+
+But note that `openssl x509 -req` does not update the CA database, so revocation tracking is manual.
+
+## 6. Build the certificate chain file
+
+The server needs to present its leaf certificate along with the intermediate. The root is usually not sent because clients already trust it.
+
+```bash
+cat server.crt /root/ca/intermediate/certs/intermediate.crt > server-chain.crt
+```
+
+Configure your web server or service to use:
+
+- `server.key` — the private key
+- `server-chain.crt` — leaf + intermediate
+
+## 7. Distribute the root certificate to clients
+
+For clients to trust certificates issued by this chain, they need the root CA certificate (`root.crt`) installed in their trust store.
+
+- On Linux: copy to `/usr/local/share/ca-certificates/` and run `update-ca-certificates`.
+- On Windows: import into “Trusted Root Certification Authorities”.
+- In AWS, for services like load balancers, you can import the root into ACM or your own trust store.
+
+## 8. Revocation (CRL/OCSP)
+
+If you use `openssl ca` with a database, you can revoke a certificate:
+
+```bash
+openssl ca -config /root/ca/intermediate/openssl.cnf -revoke server.crt
+```
+
+Then generate a CRL:
+
+```bash
+openssl ca -config /root/ca/intermediate/openssl.cnf -gencrl \
+  -out /root/ca/intermediate/crl/intermediate.crl.pem
+```
+
+For OCSP, you can run an OCSP responder:
+
+```bash
+openssl ocsp -index /root/ca/intermediate/index.txt \
+  -CA /root/ca/intermediate/certs/intermediate.crt \
+  -rsigner /root/ca/intermediate/certs/ocsp-responder.crt \
+  -rkey /root/ca/intermediate/private/ocsp-responder.key \
+  -port 2560
+```
+
+This is more involved; many small deployments rely on short-lived certificates and skip CRL/OCSP.
+
+## Key differences vs AWS Private CA
+
+| Aspect | On-premises OpenSSL CA | AWS Private CA |
+|---|---|---|
+| Key storage | You manage, often plain files | AWS-managed HSMs (FIPS 140-2/3) |
+| Root CA protection | Manual, require discipline | AWS handles hardware security |
+| Revocation | Manual CRL/OCSP setup | Integrated CRL and OCSP endpoints |
+| Rotation | Manual | AWS manages some aspects |
+| Cost | Free, but operational burden | $400/month standard, $50/month short-lived mode |
+
+If you need a small number of internal certificates and want full control, OpenSSL works well. For production at scale, the operational overhead of securing root keys, managing revocation, and maintaining availability often favors a managed service like AWS Private CA.

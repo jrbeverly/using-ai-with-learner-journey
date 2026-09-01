@@ -1,0 +1,10 @@
+# Pre-written messages for the mutual TLS tutor smoke run. Blank lines
+# separate messages; lines starting with # are ignored. Turn 3 asks
+# about an earlier module's concept to exercise the re-teach-only-when-
+# asked rule.
+
+What's the difference between the ALB's verify and passthrough modes, and which one should I use?
+
+Which extra messages does mTLS add to the handshake, and what does each one prove?
+
+Remind me how the client validated the server's certificate in one-way TLS.

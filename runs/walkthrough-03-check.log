@@ -1,0 +1,23 @@
+knowledge-check: Sure — starting with the first one.
+
+In your own words, how does Site-to-Site VPN extend a private network into a VPC?
+knowledge-check: That’s right. You’ve captured the key idea: the two private networks are joined by an encrypted IPsec tunnel across the public internet, so traffic between them is wrapped as ciphertext and each side behaves as if directly connected. `[module]`
+
+Next: what are the roles of the virtual private gateway and the transit gateway in Site-to-Site VPN?
+knowledge-check: Yes — that’s the distinction. The virtual private gateway is the AWS-side endpoint attached to a single VPC, while the transit gateway is the regional hub that VPCs, VPNs, and other networks attach to, with route tables deciding reachability. `[module]`
+
+Next: why does a Site-to-Site VPN connection carry two tunnels?
+knowledge-check: Correct. The two tunnels go to different AWS endpoints for redundancy, so if one fails the other keeps carrying traffic, and they are equivalent rather than primary/backup. `[module]`
+
+Last one from your list: what does Client VPN offer individual engineers?
+knowledge-check: That’s right. Client VPN is a managed, OpenVPN-based service that terminates encrypted connections from individual engineers’ devices and places them into a VPC or onto a transit gateway, with per-user or per-group authorization. `[module]`
+
+That covers the four concepts you asked about: how Site-to-Site VPN extends the network, the roles of VGW and TGW, why two tunnels exist, and what Client VPN offers. Everything you explained matched the module, so I have nothing new to suggest recording as unclear. This was a knowledge check, not a score.
+knowledge-check: Sounds good — stopping here.
+
+What seemed solid: all four concepts you named — how Site-to-Site VPN extends a private network, the roles of the virtual private gateway and transit gateway, why a connection carries two tunnels, and what Client VPN offers.
+
+Nothing to record as unclear in your learner state.
+
+This was a knowledge check, not a score.
+transcript: runs/walkthrough-walkthrough-03-check.part.md

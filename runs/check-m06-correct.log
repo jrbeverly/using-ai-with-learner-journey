@@ -1,0 +1,20 @@
+knowledge-check: In your own words, what does mutual TLS add to one-way TLS?
+knowledge-check: That's right — you named the key addition: the client authenticates with its own certificate and private key, the server holds a trust store of accepted CAs, and identity is carried at the transport layer before application logic runs `[module]`.
+
+Next: compared with one-way TLS, which extra messages appear in the mTLS handshake, and what does each one do?
+knowledge-check: Correct — you listed CertificateRequest (the server's list of acceptable CAs) and CertificateVerify (the client's signature over the handshake transcript, proving private-key possession), plus the server validating the client chain against its trust store `[module]`.
+
+Next: what is the server-side trust store for in mTLS?
+knowledge-check: That's correct — the trust store is the bundle of CAs (roots and intermediates) the server accepts, and it's what the server validates the client's chain against, with optional revocation checks `[module]`.
+
+Last topic: how do ALB mTLS's verify and passthrough modes differ, and which mode does the module recommend in general?
+knowledge-check: You've got the differences right: verify mode validates the chain against the trust store and optional CRLs, rejects invalid certificates at the edge, and forwards identity in X-Amzn-Mtls headers; passthrough mode does no validation and forwards the full chain in a single X-Amzn-Mtls-Clientcert header for the application to validate `[module]`.
+
+One part of the question remains: which mode does the module recommend in general, and why?
+knowledge-check: Solid: what mTLS adds, the extra handshake messages, and the trust store.
+
+Record in your learner state:  
+- Why ALB mTLS recommends verify mode — you described verify and passthrough but didn't give the recommendation or reason.
+
+No score — this is just a check.
+transcript: transcripts/check-m06-correct.md

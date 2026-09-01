@@ -1,0 +1,19 @@
+# Module 4 knowledge check. The learner answers the first topic
+# correctly but slips on why the connection ends with symmetric
+# encryption, answering that the stream is encrypted with the server's
+# public key; the helper should name the gap and re-ask, and the
+# learner corrects it. Six turns.
+
+Let's check my understanding of this module. Ask me first what the handshake accomplishes, then why it ends with symmetric encryption, then what the server certificate proves, then why ordinary TLS does not authenticate the client.
+
+The handshake is the exchange where the client and server agree on parameters — protocol versions, cipher suites, and the hostname via SNI — and the server proves it holds the private key matching its certificate, so both sides can derive the same session key before application data flows.
+
+The handshake shares the server's public key, and both sides encrypt the stream with it. The public key was already exchanged, so using it for the stream keeps things simple.
+
+I had it backwards: the stream is encrypted with a session key that both sides derive during the handshake, and that key is symmetric, so bulk data encryption stays fast. The asymmetric part is only for authenticating the server and agreeing on the session key.
+
+The server certificate proves the server's identity: it binds the server's public key to the name the client asked for, so the client knows who it is talking to before it sends anything sensitive.
+
+Ordinary TLS authenticates only the server; the client proves nothing, and the server knows only what the client chose to send. That asymmetry is what mutual TLS removes in Module 6.
+
+I'd like to stop here.

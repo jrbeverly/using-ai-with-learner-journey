@@ -1,0 +1,13 @@
+# Module 1 knowledge check. The learner steers the topics (summary
+# concepts) and answers per the module; the state file lists NAT reply
+# translation as unclear, so the learner asks for it first. Five turns.
+
+Let's check my understanding of this module. My state file has NAT reply translation as unclear, so ask me about that first, then what a route table and the default route do, then why private address ranges exist.
+
+The NAT device keeps a mapping between each connection and the private host that started it. When a reply arrives at its public address, it looks up the mapping and rewrites the destination back to the private host's address.
+
+A route table maps destination prefixes to next hops, and a router looks up the packet's destination in it, choosing the most specific matching prefix. The default route 0.0.0.0/0 matches everything and is used when nothing more specific matches.
+
+RFC 1918 reserves 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16 for private networks. Packets to these destinations are never routed across the public internet, so organizations can reuse the same ranges, but a private host needs NAT to reach the internet.
+
+I'd like to stop here.

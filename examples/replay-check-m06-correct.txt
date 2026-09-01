@@ -1,0 +1,18 @@
+# Scripted knowledge-check session against the knowledge-check helper,
+# Module 6: correct answers throughout. The learner steers the check
+# order (what mTLS adds, handshake messages, trust store, verify and
+# passthrough modes) and answers each question correctly per the module,
+# to record that a correct learner passes without false alarms. Blank
+# lines separate messages; # lines are ignored.
+
+Let's check my understanding of this module. Ask me about what mTLS adds first, then the handshake messages, then the trust store, then the verify and passthrough modes.
+
+mTLS adds client authentication to one-way TLS: the server additionally demands that the client prove its identity with a certificate. The client holds its own certificate and private key, and the server holds a trust store of the CAs it accepts. The connection itself carries identity before any application logic runs.
+
+The extra messages are CertificateRequest and CertificateVerify. The server sends CertificateRequest listing the CAs it accepts; the client replies with its certificate and a CertificateVerify — a signature over the handshake transcript made with the client's private key, proving it holds the key and not just a copy of the certificate. The server then validates the client's chain against its trust store, exactly as the client validated the server.
+
+The server-side trust store is the server's bundle of CA certificates — roots and intermediates — for the CAs it accepts, and the server validates the client's chain against it, with optional revocation checks.
+
+In verify mode the ALB validates the client certificate chain against the trust store and, optionally, against CRLs, rejecting invalid certificates at the edge, and forwards the validated identity in X-Amzn-Mtls headers. In passthrough mode the ALB performs no validation and forwards the entire chain in a single X-Amzn-Mtls-Clientcert header, leaving validation to the application.
+
+I'd like to stop here.

@@ -1,0 +1,6 @@
+knowledge-check: Let’s start with the request trace.
+
+An engineer’s laptop, connected via Client VPN and holding a client certificate, calls `api.internal.example.com`. Trace the request from that caller certificate to the service instance — in particular, where the client certificate is checked, and what identity actually reaches the instance.
+knowledge-check: That trace is right: the ALB terminates mTLS at the listener, validates the client chain against the Private CA trust store and CRL, then forwards over plain HTTP inside the VPC with `X-Amzn-Mtls` identity headers [module]. The instance itself never sees the client certificate, only the validated identity the ALB injected [module].
+
+Next: name every trust boundary that request crosses, and what is enforced at each one.

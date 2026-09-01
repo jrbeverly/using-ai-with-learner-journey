@@ -1,0 +1,17 @@
+# Module 6 knowledge check. Clean answers except the verify/passthrough
+# question, where the learner swaps the two modes; the helper should
+# name the swap and re-ask, and the learner corrects it. Six turns.
+
+Let's check my understanding of this module. Ask me first what mTLS adds to one-way TLS, then the extra handshake messages, then the server-side trust store, then how verify and passthrough modes differ.
+
+mTLS adds client authentication to one-way TLS: the server additionally demands that the client prove its identity with a certificate. The client holds its own certificate and private key, and the server holds a trust store of the CAs it accepts, so the connection itself carries identity before any application logic runs.
+
+The extra messages are CertificateRequest and CertificateVerify. The server sends CertificateRequest listing the CAs it accepts; the client replies with its certificate and a CertificateVerify, a signature over the handshake transcript made with the client's private key, proving it holds the key. The server then validates the client's chain against its trust store.
+
+The server-side trust store is the bundle of CA certificates — roots and intermediates — for the CAs the server accepts, and the server validates the client's chain against it, with optional revocation checks.
+
+Verify mode forwards the client's raw chain to the application in a single header for the application to validate; passthrough mode is where the ALB checks the chain against the trust store, rejects invalid certificates at the edge, and forwards the validated identity in X-Amzn-Mtls headers.
+
+I had the modes swapped: verify mode is the one where the ALB validates the client certificate chain against the trust store and optional CRLs, rejects invalid certificates at the edge, and forwards the validated identity in X-Amzn-Mtls headers. Passthrough mode performs no validation and forwards the entire chain in a single X-Amzn-Mtls-Clientcert header, leaving validation to the application.
+
+I'd like to stop here.

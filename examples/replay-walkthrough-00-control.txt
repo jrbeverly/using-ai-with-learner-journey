@@ -1,0 +1,8 @@
+# Pre-course segment: before starting the course the learner asks a
+# general-purpose assistant (the control arm's helper) for the big
+# picture of the subject. No learner state — the journey has not
+# started. Two turns.
+
+I'm about to start a course on private networking and mutual TLS in AWS. Before I do, give me the big picture: how does a private network inside AWS work, and what role does mutual TLS play in it?
+
+What is the single most important concept to nail down first?

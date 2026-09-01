@@ -1,0 +1,14 @@
+# Module 3 knowledge check. Topics steered per the summary; clean
+# answers. Five turns.
+
+Let's check my understanding of this module. Ask me first how Site-to-Site VPN extends a private network into a VPC, then the roles of the virtual private gateway and the transit gateway, then why a connection carries two tunnels, then what Client VPN offers.
+
+A VPN bridges two private networks with an encrypted tunnel: packets are wrapped in IPsec and travel over the public internet as ciphertext, so both ends behave as if directly connected.
+
+A virtual private gateway is the AWS-side endpoint attached to a single VPC, while a transit gateway is a regional routing hub that VPCs, Site-to-Site VPNs, and other networks all attach to, with its route tables deciding who can reach whom.
+
+Every connection carries two tunnels to different AWS endpoints so that one tunnel can fail while the other carries traffic; the tunnels are equivalent, not primary/backup.
+
+AWS Client VPN connects individual people: a managed, OpenVPN-based service whose endpoint terminates encrypted connections from engineers' laptops and drops them into a VPC or onto a transit gateway, with per-user or per-group authorization.
+
+I'd like to stop here.

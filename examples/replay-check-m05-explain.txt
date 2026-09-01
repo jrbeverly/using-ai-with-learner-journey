@@ -1,0 +1,17 @@
+# Scripted knowledge-check session against the knowledge-check helper,
+# Module 5: incorrect explain-back. The learner volunteers an explanation
+# of chain validation with the signature direction reversed (the leaf
+# signs the intermediate, the intermediate signs the root), persists it
+# when pressed, and never announces that anything is wrong. Turn 4 asks a
+# question instead of answering one, then the session closes. Blank lines
+# separate messages; # lines are ignored.
+
+Let's check my understanding of this module. I'd like to explain chain validation back to you in my own words.
+
+Here's my explanation: validation walks up from the leaf. The leaf certificate signs the intermediate, the intermediate signs the root, and once the signatures chain up to the trust anchor, the client accepts the leaf. The client also checks that a SAN matches the hostname, the validity dates, and revocation.
+
+The signatures go up the chain — from the leaf up to the anchor — so the client starts at the leaf and verifies each signature as it walks up to the root.
+
+What does a certificate actually bind together, then?
+
+I'd like to stop here.

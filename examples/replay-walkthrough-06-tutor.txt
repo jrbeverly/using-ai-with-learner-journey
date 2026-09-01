@@ -1,0 +1,9 @@
+# Module 6 tutor segment with the specialized mTLS helper. Four turns.
+
+I've just read the module. It says mTLS mirrors Module 4 in reverse. What exactly is reversed?
+
+In the diagram, which messages would a one-way TLS handshake not have, and what does the ALB validate before any application data flows?
+
+Give me the module's concrete example: an ALB in verify mode receives a request from a client with a certificate issued by the private CA. What does the ALB check, and what does the application behind it receive?
+
+The module's Position is to use verify mode. Why not passthrough, if the application could validate the chain itself?

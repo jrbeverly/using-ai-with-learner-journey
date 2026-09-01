@@ -1,0 +1,9 @@
+# Module 4 tutor segment with the grounded tutor. Four turns.
+
+I've just read the module. It says confidentiality and integrity are automatic but authentication of the server depends on certificates. What makes the first two automatic?
+
+Explain that more simply.
+
+In the diagram, walk through the handshake message by message and say what each side learns or proves at each step — and which step is the one the "see Module 5" note points at.
+
+The "Why symmetric keys" section says asymmetric cryptography is too slow for bulk data. So why does the handshake use asymmetric cryptography at all?
